@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="cloudflare-turnstile-1.0.0" author="zymlabs">
+        <createTable tableName="cloudflare_turnstile_check">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="ip_address" type="VARCHAR(45)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="timestamp" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="success" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="error_codes" type="VARCHAR(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="challenge_ts" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="hostname" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="event_id" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="session_id" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="raw_response" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex indexName="idx_turnstile_user_id" tableName="cloudflare_turnstile_check">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_realm_id" tableName="cloudflare_turnstile_check">
+            <column name="realm_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_timestamp" tableName="cloudflare_turnstile_check">
+            <column name="timestamp"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_user_timestamp" tableName="cloudflare_turnstile_check">
+            <column name="user_id"/>
+            <column name="timestamp"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_event_id" tableName="cloudflare_turnstile_check">
+            <column name="event_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_session_id" tableName="cloudflare_turnstile_check">
+            <column name="session_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

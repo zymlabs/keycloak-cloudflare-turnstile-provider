@@ -1,0 +1,19 @@
+mode: ContinuousDelivery
+branches:
+  master:
+    tag: ''
+    increment: Patch
+  develop:
+    tag: alpha
+    increment: Minor
+  feature:
+    tag: useBranchName
+    increment: Minor
+  hotfix:
+    tag: beta
+    increment: Patch
+  release:
+    tag: rc
+    increment: None
+ignore:
+  sha: []

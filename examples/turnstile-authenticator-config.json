@@ -1,0 +1,13 @@
+{
+  "siteKey": "YOUR_SITE_KEY",
+  "secretKey": "YOUR_SECRET_KEY",
+  "widgetMode": "managed",
+  "widgetTheme": "auto",
+  "recordVerifications": "true",
+  "ipAllowlist": "",
+  "ipBlocklist": "",
+  "failAction": "BLOCK",
+  "failMode": "FAIL_CLOSED",
+  "connectTimeout": "5000",
+  "readTimeout": "5000"
+}
