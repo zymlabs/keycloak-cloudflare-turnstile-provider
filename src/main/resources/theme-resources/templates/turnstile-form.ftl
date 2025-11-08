@@ -6,7 +6,7 @@
         <div id="kc-form">
             <div id="kc-form-wrapper">
                 <#-- Cloudflare Turnstile Widget -->
-                <div class="turnstile-container" style="margin-bottom: 20px;">
+                <div class="turnstile-container" style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px; min-height: 100px;">
                     <div class="cf-turnstile"
                          data-sitekey="${turnstileSiteKey}"
                          data-theme="${turnstileTheme}"

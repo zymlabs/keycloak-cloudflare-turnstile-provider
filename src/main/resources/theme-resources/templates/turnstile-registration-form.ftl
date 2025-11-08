@@ -10,14 +10,14 @@
                         <div class="${properties.kcLabelWrapperClass!}">
                             <label class="${properties.kcLabelClass!}">${msg("turnstileRegistrationInstructions")}</label>
                         </div>
+                    </div>
 
-                        <div class="${properties.kcInputWrapperClass!}">
-                            <div class="cf-turnstile"
-                                 data-sitekey="${turnstileSiteKey}"
-                                 data-theme="${turnstileTheme}"
-                                 data-size="${(turnstileMode == 'invisible')?then('invisible', 'normal')}"
-                                 data-appearance="${(turnstileMode == 'non-interactive')?then('interaction-only', 'always')}">
-                            </div>
+                    <div class="${properties.kcFormGroupClass!}" style="display: flex; justify-content: center; align-items: center; min-height: 100px;">
+                        <div class="cf-turnstile"
+                             data-sitekey="${turnstileSiteKey}"
+                             data-theme="${turnstileTheme}"
+                             data-size="${(turnstileMode == 'invisible')?then('invisible', 'normal')}"
+                             data-appearance="${(turnstileMode == 'non-interactive')?then('interaction-only', 'always')}">
                         </div>
                     </div>
 

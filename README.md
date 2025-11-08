@@ -4,9 +4,9 @@ A Keycloak authentication provider that integrates Cloudflare Turnstile CAPTCHA 
 
 ## Features
 
-### Login Protection
+### Implementation Options
 
-**Four implementation options** with different trade-offs:
+This provider offers **four flexible implementation approaches** that work for both login and registration protection. Choose based on your deployment requirements and maintenance preferences:
 
 | Option | Approach | Theme Required | JavaScript | Maintenance | When to Use |
 |--------|----------|----------------|------------|-------------|-------------|
@@ -15,26 +15,34 @@ A Keycloak authentication provider that integrates Cloudflare Turnstile CAPTCHA 
 | **3. Copied Template** | Bundled template in JAR | ❌ No | ❌ No | ⚠️ Medium | Native integration, comfortable with template maintenance |
 | **4. Custom Theme** | Standard Keycloak theme | ✅ Yes | ❌ No | ⚠️ Medium | Standard theme approach, single-realm deployments |
 
-**Key Features:**
+**Key Characteristics:**
 - **Flexible deployment** - Options 1-3 work without custom themes; Option 4 uses standard theme approach
-- **Same configuration** - All options reuse the same settings
+- **Shared configuration** - All options reuse the same authenticator settings
 - **Server-side validation** - All options enforce verification on the server
+
+### Login Protection
+
+Add Cloudflare Turnstile verification to your authentication flow using any of the [four implementation options](#implementation-options) above.
+
+**Available Authenticators:**
+- Cloudflare Turnstile (Separate Page) ⭐ - Recommended
+- Cloudflare Turnstile - Login (Script Injection)
+- Cloudflare Turnstile - Login (Copied Template)
+- Cloudflare Turnstile - Login (Custom Theme)
+
+See [Usage Examples - Login Protection](#example-1-login-protection) for detailed setup instructions.
 
 ### Registration Protection
 
-**Four implementation options** with different trade-offs:
+Add Cloudflare Turnstile verification to your registration flow using any of the [four implementation options](#implementation-options) above.
 
-| Option | Approach | Theme Required | JavaScript | Maintenance | When to Use |
-|--------|----------|----------------|------------|-------------|-------------|
-| **1. Separate Page** ⭐ | Standalone verification page | ❌ No | ❌ No | ✅ Low | **Recommended** - Maximum security, works everywhere |
-| **2. Script Injection** | JavaScript DOM manipulation | ❌ No | ✅ Yes | ✅ Low | Modern browsers, seamless inline UX |
-| **3. Copied Template** | Bundled template in JAR | ❌ No | ❌ No | ⚠️ Medium | Native integration, comfortable with template maintenance |
-| **4. Custom Theme** | Standard Keycloak theme | ✅ Yes | ❌ No | ⚠️ Medium | Standard theme approach, single-realm deployments |
+**Available Form Actions:**
+- Cloudflare Turnstile (Registration) - Separate Page ⭐ - Recommended
+- Cloudflare Turnstile (Script Injection)
+- Cloudflare Turnstile (Copied Template)
+- Cloudflare Turnstile (Custom Theme)
 
-**Key Features:**
-- **Flexible deployment** - Options 1-3 work without custom themes; Option 4 uses standard theme approach
-- **Same configuration** - All options reuse login flow settings
-- **Server-side validation** - All options enforce verification on the server
+See [docs/REGISTRATION.md](docs/REGISTRATION.md) for detailed registration setup guide.
 
 ### Widget Customization
 - **Multiple widget modes** - Managed, non-interactive, or invisible challenges
