@@ -18,7 +18,15 @@ import java.time.Instant;
                 @Index(name = "idx_turnstile_timestamp", columnList = "timestamp"),
                 @Index(name = "idx_turnstile_user_timestamp", columnList = "user_id,timestamp"),
                 @Index(name = "idx_turnstile_event_id", columnList = "event_id"),
-                @Index(name = "idx_turnstile_session_id", columnList = "session_id")
+                @Index(name = "idx_turnstile_session_id", columnList = "session_id"),
+                @Index(name = "idx_turnstile_flow_type", columnList = "flow_type"),
+                @Index(name = "idx_turnstile_auth_allowed", columnList = "authentication_allowed"),
+                @Index(name = "idx_turnstile_fail_mode", columnList = "fail_mode"),
+                @Index(name = "idx_turnstile_fail_action", columnList = "fail_action"),
+                @Index(name = "idx_turnstile_ip_allowlisted", columnList = "ip_allowlisted"),
+                @Index(name = "idx_turnstile_verification_skipped", columnList = "verification_skipped"),
+                @Index(name = "idx_turnstile_action_reason", columnList = "action_reason"),
+                @Index(name = "idx_turnstile_outcome_analysis", columnList = "realm_id,authentication_allowed,success,timestamp")
         })
 @NamedQueries({
         @NamedQuery(name = "findByUserId",
@@ -30,7 +38,10 @@ import java.time.Instant;
                         "AND c.timestamp BETWEEN :startDate AND :endDate ORDER BY c.timestamp DESC"),
         @NamedQuery(name = "findFailedByRealm",
                 query = "SELECT c FROM CloudflareTurnstileCheckEntity c WHERE c.realmId = :realmId " +
-                        "AND c.success = false ORDER BY c.timestamp DESC")
+                        "AND c.success = false ORDER BY c.timestamp DESC"),
+        @NamedQuery(name = "findByFlowType",
+                query = "SELECT c FROM CloudflareTurnstileCheckEntity c WHERE c.realmId = :realmId " +
+                        "AND c.flowType = :flowType ORDER BY c.timestamp DESC")
 })
 public class CloudflareTurnstileCheckEntity {
 
@@ -75,8 +86,41 @@ public class CloudflareTurnstileCheckEntity {
     @Column(name = "session_id", length = 36)
     private String sessionId;
 
+    @Column(name = "flow_type", length = 50)
+    private String flowType;
+
     @Column(name = "raw_response", columnDefinition = "TEXT")
     private String rawResponse;
+
+    // Configuration context columns
+    @Column(name = "fail_mode", length = 20)
+    private String failMode;
+
+    @Column(name = "fail_action", length = 20)
+    private String failAction;
+
+    @Column(name = "allowlist_behavior", length = 30)
+    private String allowlistBehavior;
+
+    @Column(name = "implementation_method", length = 30)
+    private String implementationMethod;
+
+    // IP processing status columns
+    @Column(name = "ip_allowlisted", nullable = false)
+    private boolean ipAllowlisted = false;
+
+    @Column(name = "ip_blocklisted", nullable = false)
+    private boolean ipBlocklisted = false;
+
+    @Column(name = "verification_skipped", nullable = false)
+    private boolean verificationSkipped = false;
+
+    // Final outcome columns
+    @Column(name = "authentication_allowed", nullable = false)
+    private boolean authenticationAllowed = false;
+
+    @Column(name = "action_reason", length = 100)
+    private String actionReason;
 
     // Constructors
 
@@ -189,6 +233,14 @@ public class CloudflareTurnstileCheckEntity {
         this.sessionId = sessionId;
     }
 
+    public String getFlowType() {
+        return flowType;
+    }
+
+    public void setFlowType(String flowType) {
+        this.flowType = flowType;
+    }
+
     public String getRawResponse() {
         return rawResponse;
     }
@@ -197,10 +249,82 @@ public class CloudflareTurnstileCheckEntity {
         this.rawResponse = rawResponse;
     }
 
+    public String getFailMode() {
+        return failMode;
+    }
+
+    public void setFailMode(String failMode) {
+        this.failMode = failMode;
+    }
+
+    public String getFailAction() {
+        return failAction;
+    }
+
+    public void setFailAction(String failAction) {
+        this.failAction = failAction;
+    }
+
+    public String getAllowlistBehavior() {
+        return allowlistBehavior;
+    }
+
+    public void setAllowlistBehavior(String allowlistBehavior) {
+        this.allowlistBehavior = allowlistBehavior;
+    }
+
+    public String getImplementationMethod() {
+        return implementationMethod;
+    }
+
+    public void setImplementationMethod(String implementationMethod) {
+        this.implementationMethod = implementationMethod;
+    }
+
+    public boolean isIpAllowlisted() {
+        return ipAllowlisted;
+    }
+
+    public void setIpAllowlisted(boolean ipAllowlisted) {
+        this.ipAllowlisted = ipAllowlisted;
+    }
+
+    public boolean isIpBlocklisted() {
+        return ipBlocklisted;
+    }
+
+    public void setIpBlocklisted(boolean ipBlocklisted) {
+        this.ipBlocklisted = ipBlocklisted;
+    }
+
+    public boolean isVerificationSkipped() {
+        return verificationSkipped;
+    }
+
+    public void setVerificationSkipped(boolean verificationSkipped) {
+        this.verificationSkipped = verificationSkipped;
+    }
+
+    public boolean isAuthenticationAllowed() {
+        return authenticationAllowed;
+    }
+
+    public void setAuthenticationAllowed(boolean authenticationAllowed) {
+        this.authenticationAllowed = authenticationAllowed;
+    }
+
+    public String getActionReason() {
+        return actionReason;
+    }
+
+    public void setActionReason(String actionReason) {
+        this.actionReason = actionReason;
+    }
+
     @Override
     public String toString() {
         return String.format("CloudflareTurnstileCheckEntity{id=%d, userId='%s', realmId='%s', " +
-                        "ipAddress='%s', timestamp=%s, success=%s, errorCodes='%s'}",
-                id, userId, realmId, ipAddress, timestamp, success, errorCodes);
+                        "ipAddress='%s', timestamp=%s, success=%s, flowType='%s', errorCodes='%s'}",
+                id, userId, realmId, ipAddress, timestamp, success, flowType, errorCodes);
     }
 }
