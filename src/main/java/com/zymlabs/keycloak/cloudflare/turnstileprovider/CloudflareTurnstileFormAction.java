@@ -198,6 +198,26 @@ public class CloudflareTurnstileFormAction implements FormAction {
             // Log IP block event
             CloudflareTurnstileHelper.logIpBlockedEvent(context.getEvent(), ipAddress);
 
+            // Add comprehensive audit context to event
+            String failMode = configMap.getOrDefault(CloudflareTurnstileAuthenticator.CONFIG_FAIL_MODE, "FAIL_CLOSED");
+            String failAction = configMap.getOrDefault(CloudflareTurnstileAuthenticator.CONFIG_FAIL_ACTION, "BLOCK");
+            String allowlistBehavior = configMap.getOrDefault(
+                CloudflareTurnstileAuthenticator.CONFIG_ALLOWLIST_BEHAVIOR, ALLOWLIST_VERIFY_BUT_ALLOW);
+            String implementationMethod = configMap.getOrDefault(CONFIG_IMPLEMENTATION_METHOD, METHOD_SCRIPT_INJECTION);
+            CloudflareTurnstileHelper.addAuditContextToEvent(context.getEvent(),
+                failMode, failAction, allowlistBehavior, implementationMethod,
+                false, true, false, false, "Blocked - IP blocklisted");
+
+            // Store blocklist denial to database
+            boolean recordVerifications = Boolean.parseBoolean(
+                configMap.getOrDefault(CloudflareTurnstileAuthenticator.CONFIG_RECORD_VERIFICATIONS, "true"));
+            if (recordVerifications) {
+                CloudflareTurnstileService.TurnstileVerificationResult blockedResult =
+                    new CloudflareTurnstileService.TurnstileVerificationResult(false, "ip_blocked", null, null, "ip_blocklisted");
+                storeVerificationResultWithAudit(context, blockedResult, ipAddress, isRegistrationFlow,
+                    configMap, false, true, false, false, "Blocked - IP blocklisted");
+            }
+
             setValidationError(context, formData, "turnstileIpBlocked", isRegistrationFlow);
             return;
         }
@@ -383,6 +403,8 @@ public class CloudflareTurnstileFormAction implements FormAction {
                                                   boolean verificationSkipped,
                                                   boolean authenticationAllowed,
                                                   String actionReason) {
+        // Note: event_id may be null since this is called before context.success()/error() finalizes the event
+        // The event ID is generated during finalization. Use session_id for correlation if needed.
         String eventId = context.getEvent() != null ? context.getEvent().getEvent().getId() : null;
         String sessionId = context.getAuthenticationSession().getParentSession().getId();
         String flowType = isRegistrationFlow ? "REGISTRATION" : "LOGIN";

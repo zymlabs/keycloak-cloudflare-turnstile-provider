@@ -6,6 +6,9 @@ This guide explains how to add Cloudflare Turnstile verification to user registr
 
 Turnstile can protect your registration forms from bot signups and automated account creation. This provider offers **four implementation options**:
 
+![Registration with Cloudflare Turnstile](registration-with-turnstile-widget.png)
+*Cloudflare Turnstile widget integrated into Keycloak registration form*
+
 ### Option 1: Separate Verification Page (Recommended)
 
 A standalone verification page that appears before the registration form.

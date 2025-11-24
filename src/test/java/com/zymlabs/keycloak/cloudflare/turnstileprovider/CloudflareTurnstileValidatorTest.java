@@ -173,11 +173,12 @@ class CloudflareTurnstileValidatorTest {
     }
 
     @Test
-    @DisplayName("validateTurnstile should allow IP in allowlist without verification")
-    void testValidateTurnstile_IpAllowlisted() {
+    @DisplayName("validateTurnstile should allow IP in allowlist without verification (SKIP_VERIFICATION)")
+    void testValidateTurnstile_IpAllowlisted_SkipVerification() {
         CloudflareTurnstileService service = mock(CloudflareTurnstileService.class);
-        Map<String, String> config = TestUtils.configWith(
-                CloudflareTurnstileAuthenticator.CONFIG_IP_ALLOWLIST, "192.168.1.0/24");
+        Map<String, String> config = TestUtils.configWith(Map.of(
+                CloudflareTurnstileAuthenticator.CONFIG_IP_ALLOWLIST, "192.168.1.0/24",
+                CloudflareTurnstileAuthenticator.CONFIG_ALLOWLIST_BEHAVIOR, "SKIP_VERIFICATION"));
 
         CloudflareTurnstileValidator.ValidationResult result =
                 CloudflareTurnstileValidator.validateTurnstile(
@@ -188,8 +189,55 @@ class CloudflareTurnstileValidatorTest {
         assertThat(result.getVerificationResult().isSuccess()).isTrue();
         assertThat(result.getVerificationResult().getRawResponse()).contains("allowlist");
 
-        // Service should not be called for allowlisted IPs
+        // Service should not be called for allowlisted IPs with SKIP_VERIFICATION
         verify(service, never()).verify(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("validateTurnstile should verify allowlisted IP with VERIFY_BUT_ALLOW and succeed")
+    void testValidateTurnstile_IpAllowlisted_VerifyButAllow_Success() throws Exception {
+        CloudflareTurnstileService service = mock(CloudflareTurnstileService.class);
+        CloudflareTurnstileService.TurnstileVerificationResult successResult = TestUtils.successResult();
+        when(service.verify("test-token", "192.168.1.100")).thenReturn(successResult);
+
+        Map<String, String> config = TestUtils.configWith(Map.of(
+                CloudflareTurnstileAuthenticator.CONFIG_IP_ALLOWLIST, "192.168.1.0/24",
+                CloudflareTurnstileAuthenticator.CONFIG_ALLOWLIST_BEHAVIOR, "VERIFY_BUT_ALLOW"));
+
+        CloudflareTurnstileValidator.ValidationResult result =
+                CloudflareTurnstileValidator.validateTurnstile(
+                        "test-token", "192.168.1.100", config, service);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getVerificationResult()).isEqualTo(successResult);
+        assertThat(result.getVerificationResult().getRawResponse()).doesNotContain("allowlist");
+
+        // Service SHOULD be called for allowlisted IPs with VERIFY_BUT_ALLOW
+        verify(service).verify("test-token", "192.168.1.100");
+    }
+
+    @Test
+    @DisplayName("validateTurnstile should verify allowlisted IP with VERIFY_BUT_ALLOW even on failure")
+    void testValidateTurnstile_IpAllowlisted_VerifyButAllow_Failure() throws Exception {
+        CloudflareTurnstileService service = mock(CloudflareTurnstileService.class);
+        CloudflareTurnstileService.TurnstileVerificationResult failureResult = TestUtils.failureResult();
+        when(service.verify("test-token", "192.168.1.100")).thenReturn(failureResult);
+
+        Map<String, String> config = TestUtils.configWith(Map.of(
+                CloudflareTurnstileAuthenticator.CONFIG_IP_ALLOWLIST, "192.168.1.0/24",
+                CloudflareTurnstileAuthenticator.CONFIG_ALLOWLIST_BEHAVIOR, "VERIFY_BUT_ALLOW"));
+
+        CloudflareTurnstileValidator.ValidationResult result =
+                CloudflareTurnstileValidator.validateTurnstile(
+                        "test-token", "192.168.1.100", config, service);
+
+        // Should fail based on actual Cloudflare response
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.getErrorCode()).isEqualTo("verification_failed");
+        assertThat(result.getErrorMessage()).isEqualTo("turnstileVerificationFailed");
+
+        // Service SHOULD be called for allowlisted IPs with VERIFY_BUT_ALLOW
+        verify(service).verify("test-token", "192.168.1.100");
     }
 
     @Test
@@ -288,12 +336,15 @@ class CloudflareTurnstileValidatorTest {
     }
 
     @Test
-    @DisplayName("validateTurnstile should use default allowlist when not configured")
-    void testValidateTurnstile_DefaultAllowlist() {
+    @DisplayName("validateTurnstile should use default allowlist with SKIP_VERIFICATION")
+    void testValidateTurnstile_DefaultAllowlist_SkipVerification() {
         CloudflareTurnstileService service = mock(CloudflareTurnstileService.class);
-        Map<String, String> config = TestUtils.emptyConfig();
+        // Explicitly set allowlist to match the default to ensure test works reliably
+        Map<String, String> config = TestUtils.configWith(Map.of(
+                CloudflareTurnstileAuthenticator.CONFIG_IP_ALLOWLIST, "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8",
+                CloudflareTurnstileAuthenticator.CONFIG_ALLOWLIST_BEHAVIOR, "SKIP_VERIFICATION"));
 
-        // Default allowlist includes 192.168.0.0/16
+        // 192.168.1.1 is in 192.168.0.0/16
         CloudflareTurnstileValidator.ValidationResult result =
                 CloudflareTurnstileValidator.validateTurnstile(
                         "test-token", "192.168.1.1", config, service);

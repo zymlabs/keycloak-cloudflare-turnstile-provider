@@ -294,23 +294,17 @@ The theme variant you choose only affects **CUSTOM_THEME** mode. Other implement
 
 ## Advanced Configuration
 
-### Custom Theme Based on Turnstile Variants
+### Integrating Turnstile Into Your Existing Custom Theme
 
-You can create your own theme that extends Turnstile variants:
+If you have an existing custom Keycloak theme and want to add Turnstile verification, see the **[Custom Theme Integration Guide](CUSTOM-THEME-INTEGRATION.md)** for detailed instructions on copying the reference implementation code into your theme templates.
 
-**For modern custom theme**:
-```properties
-# my-custom-theme/login/theme.properties
-parent=cloudflare-turnstile
-# Your customizations here
-```
+The bundled themes (`cloudflare-turnstile` and `cloudflare-turnstile-legacy`) are reference implementations that demonstrate how to integrate Turnstile. Rather than extending these themes, you should copy the relevant FreeMarker code snippets into your own custom theme's `login.ftl` and `register.ftl` files.
 
-**For legacy custom theme**:
-```properties
-# my-legacy-theme/login/theme.properties
-parent=cloudflare-turnstile-legacy
-# Your customizations here
-```
+**See**: [Custom Theme Integration Guide](CUSTOM-THEME-INTEGRATION.md) for:
+- Step-by-step integration instructions
+- Exact code snippets to copy
+- Template variable documentation
+- Troubleshooting common issues
 
 ### Shared Resources
 

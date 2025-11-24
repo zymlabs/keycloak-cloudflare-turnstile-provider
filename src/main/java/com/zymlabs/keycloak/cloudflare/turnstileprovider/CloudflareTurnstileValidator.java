@@ -131,14 +131,21 @@ public class CloudflareTurnstileValidator {
             return ValidationResult.failure("ip_blocked", "turnstileIpBlocked");
         }
 
-        // Check IP allowlist
+        // Check IP allowlist and handle based on allowlistBehavior configuration
+        String allowlistBehavior = config.getOrDefault(
+                CloudflareTurnstileAuthenticator.CONFIG_ALLOWLIST_BEHAVIOR, "VERIFY_BUT_ALLOW");
+
         if (isIpAllowed(ipAddress, ipAllowlist)) {
-            logger.infof("IP %s in allowlist, skipping Turnstile verification", ipAddress);
-            // Create a synthetic success result
-            CloudflareTurnstileService.TurnstileVerificationResult allowlistResult =
-                    new CloudflareTurnstileService.TurnstileVerificationResult(
-                            true, null, null, null, "{\"success\":true,\"allowlist\":true}");
-            return ValidationResult.success(allowlistResult);
+            if ("SKIP_VERIFICATION".equals(allowlistBehavior)) {
+                // SKIP_VERIFICATION mode: Don't make API call, return synthetic success
+                logger.infof("IP %s in allowlist with SKIP_VERIFICATION - bypassing Cloudflare API call", ipAddress);
+                CloudflareTurnstileService.TurnstileVerificationResult allowlistResult =
+                        new CloudflareTurnstileService.TurnstileVerificationResult(
+                                true, null, null, null, "{\"success\":true,\"allowlist\":true}");
+                return ValidationResult.success(allowlistResult);
+            }
+            // VERIFY_BUT_ALLOW mode: Continue to actual Cloudflare API call below
+            logger.infof("IP %s in allowlist with VERIFY_BUT_ALLOW - will verify with Cloudflare API", ipAddress);
         }
 
         // Verify with Cloudflare

@@ -83,6 +83,25 @@ public class CloudflareTurnstileAuthenticator extends org.keycloak.authenticatio
         if (CloudflareTurnstileValidator.isIpBlocked(ipAddress, ipBlocklist)) {
             logger.warnf("IP %s is in blocklist, denying access", ipAddress);
             CloudflareTurnstileHelper.logIpBlockedEvent(context.getEvent(), ipAddress);
+
+            // Add comprehensive audit context to event
+            String failMode = configMap.getOrDefault(CONFIG_FAIL_MODE, "FAIL_CLOSED");
+            String failAction = configMap.getOrDefault(CONFIG_FAIL_ACTION, "BLOCK");
+            String allowlistBehavior = configMap.getOrDefault(CONFIG_ALLOWLIST_BEHAVIOR, ALLOWLIST_VERIFY_BUT_ALLOW);
+            String implementationMethod = configMap.getOrDefault(CONFIG_IMPLEMENTATION_METHOD, METHOD_SEPARATE_PAGE);
+            CloudflareTurnstileHelper.addAuditContextToEvent(context.getEvent(),
+                failMode, failAction, allowlistBehavior, implementationMethod,
+                false, true, false, false, "Blocked - IP blocklisted");
+
+            // Store blocklist denial to database
+            boolean recordVerifications = Boolean.parseBoolean(configMap.getOrDefault(CONFIG_RECORD_VERIFICATIONS, "true"));
+            if (recordVerifications) {
+                CloudflareTurnstileService.TurnstileVerificationResult blockedResult =
+                    new CloudflareTurnstileService.TurnstileVerificationResult(false, "ip_blocked", null, null, "ip_blocklisted");
+                storeVerificationResultWithAudit(context, blockedResult, ipAddress, isRegistrationFlow,
+                    configMap, false, true, false, false, "Blocked - IP blocklisted");
+            }
+
             context.getEvent().error(Errors.ACCESS_DENIED);
 
             Response response = context.form()
@@ -614,6 +633,8 @@ public class CloudflareTurnstileAuthenticator extends org.keycloak.authenticatio
                                                   boolean verificationSkipped,
                                                   boolean authenticationAllowed,
                                                   String actionReason) {
+        // Note: event_id may be null since this is called before context.success()/error() finalizes the event
+        // The event ID is generated during finalization. Use session_id for correlation if needed.
         String eventId = context.getEvent() != null ? context.getEvent().getEvent().getId() : null;
         String sessionId = context.getAuthenticationSession().getParentSession().getId();
         String flowType = isRegistrationFlow ? "REGISTRATION" : "LOGIN";

@@ -2,6 +2,9 @@
 
 A Keycloak authentication provider that integrates Cloudflare Turnstile CAPTCHA verification into the authentication flow. This extension adds bot protection and security verification to your Keycloak login process.
 
+![Login with Cloudflare Turnstile](docs/login-with-turnstile-widget.png)
+*Cloudflare Turnstile widget integrated into Keycloak login flow*
+
 ## Features
 
 ### Implementation Options
@@ -80,6 +83,8 @@ For **Custom Theme** implementation (Option 4), this provider includes two theme
 **Note**: Theme selection only applies to **Custom Theme** implementation (Option 3). Other implementation options (Separate Page, Script Injection) are theme-agnostic and work with any Keycloak theme.
 
 **See [docs/THEME-SELECTION.md](docs/THEME-SELECTION.md) for detailed theme selection guide.**
+
+**Integrating with existing custom themes?** See [docs/CUSTOM-THEME-INTEGRATION.md](docs/CUSTOM-THEME-INTEGRATION.md) for step-by-step instructions on copying Turnstile code from the bundled reference themes into your own custom theme templates.
 
 ## Installation
 
@@ -207,6 +212,9 @@ For detailed CSP troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.
 4. Click **Actions** → **Config** to configure the authenticator
 
 ### 3. Configuration Options
+
+![Authenticator Configuration](docs/authenticator-configuration.png)
+*Cloudflare Turnstile authenticator configuration interface*
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -472,6 +480,9 @@ All Turnstile verification attempts log the following fields to Keycloak events:
 
 ### Viewing Events
 
+![Event Logging Details](docs/event-logging-details.png)
+*Detailed event logging showing all Cloudflare Turnstile audit fields*
+
 **Keycloak Admin Console:**
 1. Navigate to **Events** → **Login Events**
 2. Click on any event
@@ -601,8 +612,13 @@ This project is licensed under the Apache License 2.0 - see the LICENSE file for
 
 ## Support
 
-- **Issues**: https://github.com/zymlabs/keycloak-cloudflare-turnstile/issues
-- **Documentation**: See the `docs/` directory for detailed guides
+- **Issues**: https://github.com/zymlabs/keycloak-cloudflare-turnstile-provider/issues
+- **Documentation**:
+  - [Setup Guide](docs/SETUP.md) - Detailed installation and configuration
+  - [Registration Guide](docs/REGISTRATION.md) - Registration flow integration
+  - [Theme Selection](docs/THEME-SELECTION.md) - Choose the right theme variant
+  - [Custom Theme Integration](docs/CUSTOM-THEME-INTEGRATION.md) - Integrate with existing custom themes
+  - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Credits
 
