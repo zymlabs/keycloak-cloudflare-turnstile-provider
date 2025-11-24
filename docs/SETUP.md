@@ -7,12 +7,14 @@ Step-by-step guide for installing and configuring the Cloudflare Turnstile Keycl
 1. [Prerequisites](#prerequisites)
 2. [Getting Cloudflare Turnstile Keys](#getting-cloudflare-turnstile-keys)
 3. [Installing the Extension](#installing-the-extension)
-4. [Creating an Authentication Flow](#creating-an-authentication-flow)
-5. [Configuring the Authenticator](#configuring-the-authenticator)
-6. [Testing](#testing)
-7. [Activating the Flow](#activating-the-flow)
-8. [Adding Turnstile to Registration](#adding-turnstile-to-registration)
-9. [Next Steps](#next-steps)
+4. [Configure Content Security Policy](#4-configure-content-security-policy)
+5. [Configure Theme (Optional - Custom Theme Mode Only)](#5-configure-theme-optional---custom-theme-mode-only)
+6. [Creating an Authentication Flow](#creating-an-authentication-flow)
+7. [Configuring the Authenticator](#configuring-the-authenticator)
+8. [Testing](#testing)
+9. [Activating the Flow](#activating-the-flow)
+10. [Adding Turnstile to Registration](#adding-turnstile-to-registration)
+11. [Next Steps](#next-steps)
 
 ## Prerequisites
 
@@ -32,6 +34,7 @@ Step-by-step guide for installing and configuring the Cloudflare Turnstile Keycl
 - ✅ Keycloak server can reach `https://challenges.cloudflare.com`
 - ✅ Client browsers can reach `https://challenges.cloudflare.com`
 - ✅ HTTPS enabled on your Keycloak instance (Turnstile requires HTTPS)
+- ✅ Content Security Policy (CSP) configured to allow Cloudflare domains (see [Configure CSP](#4-configure-content-security-policy) below)
 
 ## Getting Cloudflare Turnstile Keys
 
@@ -169,6 +172,294 @@ WHERE table_name = 'cloudflare_turnstile_check';
 
 3. In Keycloak Admin Console, go to Authentication → Flows
 4. Try to create a new execution - "Cloudflare Turnstile" should appear in the dropdown
+
+## 4. Configure Content Security Policy
+
+⚠️ **IMPORTANT**: Cloudflare Turnstile requires CSP configuration to load the widget from Cloudflare's servers.
+
+### Why CSP is Required
+
+Turnstile loads JavaScript and iframe content from `challenges.cloudflare.com`. Without proper CSP configuration, browsers will block these resources and the widget won't appear.
+
+### Required CSP Directives
+
+**Minimum (from Cloudflare documentation)**:
+```
+script-src https://challenges.cloudflare.com
+frame-src https://challenges.cloudflare.com
+```
+
+**Recommended for Keycloak** (includes `'self'` and `connect-src`):
+```
+script-src 'self' https://challenges.cloudflare.com
+frame-src 'self' https://challenges.cloudflare.com
+connect-src 'self' https://challenges.cloudflare.com
+```
+
+### Configuration Methods
+
+Choose the method that best fits your deployment:
+
+#### Method 1: Keycloak Environment Variables
+
+Add CSP configuration via environment variables before starting Keycloak:
+
+```bash
+# Set CSP environment variables
+export KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com"
+export KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com"
+export KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC="'self' https://challenges.cloudflare.com"
+
+# Start Keycloak
+/opt/keycloak/bin/kc.sh start
+```
+
+#### Method 2: Docker / Docker Compose
+
+Add environment variables to your `docker-compose.yml`:
+
+```yaml
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.0
+    environment:
+      KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
+      KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
+      KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
+    volumes:
+      - ./zymlabs-cloudflare-turnstile-provider.jar:/opt/keycloak/providers/zymlabs-cloudflare-turnstile-provider.jar
+    command:
+      - start-dev
+```
+
+Or with `docker run`:
+
+```bash
+docker run -d \
+  -e KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com" \
+  -e KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com" \
+  -e KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC="'self' https://challenges.cloudflare.com" \
+  -v ./zymlabs-cloudflare-turnstile-provider.jar:/opt/keycloak/providers/zymlabs-cloudflare-turnstile-provider.jar \
+  quay.io/keycloak/keycloak:24.0.0
+```
+
+#### Method 3: Reverse Proxy Headers
+
+If Keycloak is behind a reverse proxy, configure CSP headers there:
+
+**nginx** (`/etc/nginx/nginx.conf` or site config):
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name auth.yourdomain.com;
+
+    location / {
+        proxy_pass http://keycloak:8080;
+
+        # Add CSP header
+        add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;" always;
+
+        # Other proxy headers...
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+**Apache** (`httpd.conf` or `.htaccess`):
+
+```apache
+<VirtualHost *:443>
+    ServerName auth.yourdomain.com
+
+    # Add CSP header
+    Header always set Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
+
+    ProxyPass / http://keycloak:8080/
+    ProxyPassReverse / http://keycloak:8080/
+</VirtualHost>
+```
+
+**Traefik** (labels in `docker-compose.yml`):
+
+```yaml
+services:
+  keycloak:
+    labels:
+      - "traefik.http.middlewares.csp.headers.contentsecuritypolicy=script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
+      - "traefik.http.routers.keycloak.middlewares=csp"
+```
+
+#### Method 4: Kubernetes
+
+**Via ConfigMap**:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-env
+data:
+  KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
+  KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
+  KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+spec:
+  template:
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:24.0.0
+        envFrom:
+        - configMapRef:
+            name: keycloak-env
+```
+
+**Via Ingress** (nginx-ingress):
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  annotations:
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;" always;
+spec:
+  rules:
+  - host: auth.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak
+            port:
+              number: 8080
+```
+
+### Verify CSP Configuration
+
+After configuring CSP, verify it's working:
+
+**1. Check HTTP Headers**:
+
+```bash
+curl -I https://your-keycloak.com/realms/your-realm/protocol/openid-connect/auth | grep -i content-security
+```
+
+Should show:
+```
+content-security-policy: script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; ...
+```
+
+**2. Check Browser Console**:
+
+1. Open your Keycloak login page
+2. Press F12 to open DevTools
+3. Go to Console tab
+4. Look for CSP errors
+
+**Should NOT see**:
+```
+Refused to load script from 'https://challenges.cloudflare.com/...' because it violates CSP
+Refused to frame 'https://challenges.cloudflare.com/...' because it violates CSP
+```
+
+**3. Check Widget Loads**:
+
+1. Navigate to login page
+2. Turnstile widget should appear
+3. No console errors related to Cloudflare
+
+If you see CSP errors, review your configuration method and ensure CSP headers are being set correctly.
+
+### Troubleshooting CSP Issues
+
+If CSP is not working:
+
+1. **Environment variables not taking effect**:
+   - Restart Keycloak completely
+   - Verify env vars with: `printenv | grep KC_SPI_CONTENT_SECURITY_POLICY`
+
+2. **Docker CSP not working**:
+   - Check environment variables are passed: `docker exec keycloak printenv | grep KC_SPI`
+   - Rebuild container: `docker-compose up -d --force-recreate`
+
+3. **Reverse proxy CSP conflicts**:
+   - CSP headers can conflict if set in multiple places
+   - Check if Keycloak is setting CSP AND proxy is setting CSP
+   - Choose one location (preferably reverse proxy for better control)
+
+4. **Widget still not loading**:
+   - Verify HTTPS is enabled (Turnstile requires HTTPS)
+   - Check browser console for specific error messages
+   - See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#widget-issues) for more help
+
+## 5. Configure Theme (Optional - Custom Theme Mode Only)
+
+**Note**: This step is **only required** if you plan to use the **Custom Theme** implementation method. If you're using Separate Page, Script Injection, or Copied Template methods, skip this section.
+
+### Theme Variants
+
+This provider includes two theme variants for compatibility across different Keycloak versions:
+
+| Theme Variant | Parent Theme | Keycloak Version | PatternFly | When to Use |
+|---------------|--------------|------------------|------------|-------------|
+| **cloudflare-turnstile** | keycloak.v2 | 25-26+ | 5 | ✅ Modern Keycloak installations |
+| **cloudflare-turnstile-legacy** | keycloak | 24.x | 3/4 | ⚠️ Legacy support for KC 24.x |
+
+### Selecting a Theme Variant
+
+#### For Keycloak 26+ (Recommended)
+
+1. Log in to Keycloak Admin Console
+2. Navigate to **Realm Settings**
+3. Click the **Themes** tab
+4. Under **Login Theme** dropdown, select: **cloudflare-turnstile**
+5. Click **Save**
+
+#### For Keycloak 24.x
+
+1. Log in to Keycloak Admin Console
+2. Navigate to **Realm Settings**
+3. Click the **Themes** tab
+4. Under **Login Theme** dropdown, select: **cloudflare-turnstile-legacy**
+5. Click **Save**
+
+#### For Keycloak 25.x (Transition Version)
+
+- **If using keycloak.v2 theme**: Select **cloudflare-turnstile**
+- **If using classic keycloak theme**: Select **cloudflare-turnstile-legacy**
+
+### Verifying Theme Selection
+
+After saving, the theme will be active immediately for new sessions:
+
+1. Open a private/incognito browser window
+2. Navigate to your realm's login page
+3. Verify the theme appears correct
+4. Check browser DevTools console for any errors
+
+### When NOT to Configure Theme
+
+Skip theme configuration if you're using:
+- **Separate Page** implementation - Uses standalone Turnstile page (theme-independent)
+- **Script Injection** implementation - JavaScript injects widget into any theme
+- **Copied Template** implementation - Uses bundled templates from JAR
+
+These methods work with **any Keycloak theme** and don't require custom theme selection.
+
+### Detailed Theme Selection Guide
+
+For detailed information about theme variants, compatibility, and troubleshooting, see:
+- **[docs/THEME-SELECTION.md](THEME-SELECTION.md)** - Comprehensive theme selection guide
 
 ## Creating an Authentication Flow
 
@@ -468,9 +759,10 @@ If issues occur:
 
 **Check**:
 - HTTPS enabled? (Turnstile requires HTTPS)
+- **Content Security Policy configured?** - See [Configure CSP](#4-configure-content-security-policy) above
 - Browser can reach `challenges.cloudflare.com`?
 - JavaScript enabled in browser?
-- Check browser console for errors
+- Check browser console for errors (especially CSP violations)
 
 ### "Missing Input Response" Error
 
