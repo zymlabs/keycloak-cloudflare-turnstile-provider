@@ -77,4 +77,108 @@
         </createIndex>
     </changeSet>
 
+    <!-- Add audit columns for comprehensive tracking of configuration and outcomes -->
+    <changeSet id="cloudflare-turnstile-1.1.0" author="zymlabs">
+        <!-- Add flow_type column (was missing from initial schema but needed in entity) -->
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="flow_type" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Add configuration context columns -->
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="fail_mode" type="VARCHAR(20)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="fail_action" type="VARCHAR(20)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="allowlist_behavior" type="VARCHAR(30)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="implementation_method" type="VARCHAR(30)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Add IP processing status columns -->
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="ip_allowlisted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="ip_blocklisted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="verification_skipped" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <!-- Add final outcome columns -->
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="authentication_allowed" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="cloudflare_turnstile_check">
+            <column name="action_reason" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Create indexes for new audit columns -->
+        <createIndex indexName="idx_turnstile_flow_type" tableName="cloudflare_turnstile_check">
+            <column name="flow_type"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_auth_allowed" tableName="cloudflare_turnstile_check">
+            <column name="authentication_allowed"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_fail_mode" tableName="cloudflare_turnstile_check">
+            <column name="fail_mode"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_fail_action" tableName="cloudflare_turnstile_check">
+            <column name="fail_action"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_ip_allowlisted" tableName="cloudflare_turnstile_check">
+            <column name="ip_allowlisted"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_verification_skipped" tableName="cloudflare_turnstile_check">
+            <column name="verification_skipped"/>
+        </createIndex>
+
+        <createIndex indexName="idx_turnstile_action_reason" tableName="cloudflare_turnstile_check">
+            <column name="action_reason"/>
+        </createIndex>
+
+        <!-- Composite index for outcome analysis queries -->
+        <createIndex indexName="idx_turnstile_outcome_analysis" tableName="cloudflare_turnstile_check">
+            <column name="realm_id"/>
+            <column name="authentication_allowed"/>
+            <column name="success"/>
+            <column name="timestamp"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
