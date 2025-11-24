@@ -222,9 +222,9 @@ ON cloudflare_turnstile_check(realm_id, authentication_allowed, success, timesta
 
 Five JPA named queries are defined on the entity:
 
-### findByUserId
+### CloudflareTurnstileCheck.findByUserId
 ```java
-@NamedQuery(name = "findByUserId",
+@NamedQuery(name = "CloudflareTurnstileCheck.findByUserId",
     query = "SELECT c FROM CloudflareTurnstileCheckEntity c
              WHERE c.userId = :userId
              ORDER BY c.timestamp DESC")
@@ -233,40 +233,40 @@ Five JPA named queries are defined on the entity:
 **Usage**:
 ```java
 List<CloudflareTurnstileCheckEntity> checks = em
-    .createNamedQuery("findByUserId", CloudflareTurnstileCheckEntity.class)
+    .createNamedQuery("CloudflareTurnstileCheck.findByUserId", CloudflareTurnstileCheckEntity.class)
     .setParameter("userId", userId)
     .getResultList();
 ```
 
-### findByRealmId
+### CloudflareTurnstileCheck.findByRealmId
 ```java
-@NamedQuery(name = "findByRealmId",
+@NamedQuery(name = "CloudflareTurnstileCheck.findByRealmId",
     query = "SELECT c FROM CloudflareTurnstileCheckEntity c
              WHERE c.realmId = :realmId
              ORDER BY c.timestamp DESC")
 ```
 
-### findByUserIdAndDateRange
+### CloudflareTurnstileCheck.findByUserIdAndDateRange
 ```java
-@NamedQuery(name = "findByUserIdAndDateRange",
+@NamedQuery(name = "CloudflareTurnstileCheck.findByUserIdAndDateRange",
     query = "SELECT c FROM CloudflareTurnstileCheckEntity c
              WHERE c.userId = :userId
              AND c.timestamp BETWEEN :startDate AND :endDate
              ORDER BY c.timestamp DESC")
 ```
 
-### findFailedByRealm
+### CloudflareTurnstileCheck.findFailedByRealm
 ```java
-@NamedQuery(name = "findFailedByRealm",
+@NamedQuery(name = "CloudflareTurnstileCheck.findFailedByRealm",
     query = "SELECT c FROM CloudflareTurnstileCheckEntity c
              WHERE c.realmId = :realmId
              AND c.success = false
              ORDER BY c.timestamp DESC")
 ```
 
-### findByFlowType
+### CloudflareTurnstileCheck.findByFlowType
 ```java
-@NamedQuery(name = "findByFlowType",
+@NamedQuery(name = "CloudflareTurnstileCheck.findByFlowType",
     query = "SELECT c FROM CloudflareTurnstileCheckEntity c
              WHERE c.realmId = :realmId
              AND c.flowType = :flowType
@@ -276,7 +276,7 @@ List<CloudflareTurnstileCheckEntity> checks = em
 **Usage**:
 ```java
 List<CloudflareTurnstileCheckEntity> loginChecks = em
-    .createNamedQuery("findByFlowType", CloudflareTurnstileCheckEntity.class)
+    .createNamedQuery("CloudflareTurnstileCheck.findByFlowType", CloudflareTurnstileCheckEntity.class)
     .setParameter("realmId", realmId)
     .setParameter("flowType", "login")
     .getResultList();

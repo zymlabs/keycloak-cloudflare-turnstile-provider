@@ -270,11 +270,11 @@ context.getEvent()
 ### Database Queries
 
 Named queries defined in `@NamedQueries` on entity:
-- `findByUserId`
-- `findByRealmId`
-- `findByUserIdAndDateRange`
-- `findFailedByRealm`
-- `findByFlowType`
+- `CloudflareTurnstileCheck.findByUserId`
+- `CloudflareTurnstileCheck.findByRealmId`
+- `CloudflareTurnstileCheck.findByUserIdAndDateRange`
+- `CloudflareTurnstileCheck.findFailedByRealm`
+- `CloudflareTurnstileCheck.findByFlowType`
 
 Access via EntityManager:
 ```java
@@ -283,13 +283,13 @@ EntityManager em = context.getSession()
     .getEntityManager();
 
 List<CloudflareTurnstileCheckEntity> results = em
-    .createNamedQuery("findByUserId", CloudflareTurnstileCheckEntity.class)
+    .createNamedQuery("CloudflareTurnstileCheck.findByUserId", CloudflareTurnstileCheckEntity.class)
     .setParameter("userId", userId)
     .getResultList();
 
 // Find by flow type (login vs registration)
 List<CloudflareTurnstileCheckEntity> loginChecks = em
-    .createNamedQuery("findByFlowType", CloudflareTurnstileCheckEntity.class)
+    .createNamedQuery("CloudflareTurnstileCheck.findByFlowType", CloudflareTurnstileCheckEntity.class)
     .setParameter("realmId", realmId)
     .setParameter("flowType", "login")
     .getResultList();

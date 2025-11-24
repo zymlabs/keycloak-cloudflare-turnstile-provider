@@ -29,17 +29,17 @@ import java.time.Instant;
                 @Index(name = "idx_turnstile_outcome_analysis", columnList = "realm_id,authentication_allowed,success,timestamp")
         })
 @NamedQueries({
-        @NamedQuery(name = "findByUserId",
+        @NamedQuery(name = "CloudflareTurnstileCheck.findByUserId",
                 query = "SELECT c FROM CloudflareTurnstileCheckEntity c WHERE c.userId = :userId ORDER BY c.timestamp DESC"),
-        @NamedQuery(name = "findByRealmId",
+        @NamedQuery(name = "CloudflareTurnstileCheck.findByRealmId",
                 query = "SELECT c FROM CloudflareTurnstileCheckEntity c WHERE c.realmId = :realmId ORDER BY c.timestamp DESC"),
-        @NamedQuery(name = "findByUserIdAndDateRange",
+        @NamedQuery(name = "CloudflareTurnstileCheck.findByUserIdAndDateRange",
                 query = "SELECT c FROM CloudflareTurnstileCheckEntity c WHERE c.userId = :userId " +
                         "AND c.timestamp BETWEEN :startDate AND :endDate ORDER BY c.timestamp DESC"),
-        @NamedQuery(name = "findFailedByRealm",
+        @NamedQuery(name = "CloudflareTurnstileCheck.findFailedByRealm",
                 query = "SELECT c FROM CloudflareTurnstileCheckEntity c WHERE c.realmId = :realmId " +
                         "AND c.success = false ORDER BY c.timestamp DESC"),
-        @NamedQuery(name = "findByFlowType",
+        @NamedQuery(name = "CloudflareTurnstileCheck.findByFlowType",
                 query = "SELECT c FROM CloudflareTurnstileCheckEntity c WHERE c.realmId = :realmId " +
                         "AND c.flowType = :flowType ORDER BY c.timestamp DESC")
 })
