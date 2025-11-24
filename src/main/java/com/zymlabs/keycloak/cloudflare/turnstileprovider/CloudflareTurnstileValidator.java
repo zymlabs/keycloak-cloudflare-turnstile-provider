@@ -181,6 +181,26 @@ public class CloudflareTurnstileValidator {
     }
 
     /**
+     * Gets the client IP address from the form context.
+     *
+     * @param context Form context
+     * @return Client IP address
+     */
+    public static String getClientIpAddress(org.keycloak.authentication.FormContext context) {
+        return context.getConnection().getRemoteAddr();
+    }
+
+    /**
+     * Gets the client IP address from the validation context.
+     *
+     * @param context Validation context
+     * @return Client IP address
+     */
+    public static String getClientIpAddress(org.keycloak.authentication.ValidationContext context) {
+        return context.getConnection().getRemoteAddr();
+    }
+
+    /**
      * Gets configuration from authenticator config model.
      *
      * @param context Authentication flow context

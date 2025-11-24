@@ -53,7 +53,9 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
     @Override
     public String getHelpText() {
         return "Validates users with Cloudflare Turnstile CAPTCHA challenge. " +
-                "Displays a Turnstile widget before login and verifies the response token.";
+                "Automatically works for both login and registration flows. " +
+                "Displays a Turnstile widget before the form and verifies the response token. " +
+                "Supports advanced features like IP allowlists/blocklists, fail modes, and conditional MFA.";
     }
 
     @Override
@@ -73,6 +75,15 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
                 .helpText("Your Cloudflare Turnstile secret key (server-side key)")
                 .type(ProviderConfigProperty.PASSWORD)
                 .secret(true)
+                .add()
+
+                .property()
+                .name(CloudflareTurnstileAuthenticator.CONFIG_IMPLEMENTATION_METHOD)
+                .label("Implementation Method")
+                .helpText("How to integrate Turnstile: SEPARATE_PAGE shows Turnstile on its own page (default), SCRIPT_INJECTION uses JavaScript to inject widget inline (works with any theme), CUSTOM_THEME renders widget inline using theme's template (requires theme support).")
+                .type(ProviderConfigProperty.LIST_TYPE)
+                .options("SEPARATE_PAGE", "SCRIPT_INJECTION", "CUSTOM_THEME")
+                .defaultValue("SEPARATE_PAGE")
                 .add()
 
                 .property()
@@ -110,6 +121,15 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
                 .add()
 
                 .property()
+                .name(CloudflareTurnstileAuthenticator.CONFIG_ALLOWLIST_BEHAVIOR)
+                .label("Allowlist Behavior")
+                .helpText("Behavior for allowlisted IPs: VERIFY_BUT_ALLOW (default, audit mode) - make API call and log result, but always allow access; SKIP_VERIFICATION (faster, saves API quota) - don't make Cloudflare API call.")
+                .type(ProviderConfigProperty.LIST_TYPE)
+                .options("SKIP_VERIFICATION", "VERIFY_BUT_ALLOW")
+                .defaultValue("VERIFY_BUT_ALLOW")
+                .add()
+
+                .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_IP_BLOCKLIST)
                 .label("IP Blocklist")
                 .helpText("Comma-separated list of IPs/CIDRs to immediately block. Allowlist takes precedence if IP appears in both lists. Supports IPv4 (203.0.113.0/24) and IPv6 (2001:db9::/32). Example: 203.0.113.0/24,198.51.100.1")
@@ -119,8 +139,8 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
 
                 .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_FAIL_ACTION)
-                .label("Fail Action")
-                .helpText("Action to take when Turnstile verification fails")
+                .label("Verification Failure Action")
+                .helpText("Action to take when Turnstile verification completes but fails (returns success=false). BLOCK denies access, ALLOW permits access with warning, REQUIRE_MFA adds MFA requirement.")
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options("BLOCK", "ALLOW", "REQUIRE_MFA")
                 .defaultValue("BLOCK")
@@ -128,8 +148,8 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
 
                 .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_FAIL_MODE)
-                .label("Fail Mode")
-                .helpText("How to handle errors connecting to Cloudflare API: FAIL_CLOSED (block) or FAIL_OPEN (allow)")
+                .label("Error Handling Mode")
+                .helpText("How to handle errors during verification (API timeouts, network errors, service outages). FAIL_CLOSED blocks access for maximum security, FAIL_OPEN allows access to prevent lockouts.")
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options("FAIL_CLOSED", "FAIL_OPEN")
                 .defaultValue("FAIL_CLOSED")
@@ -149,6 +169,14 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
                 .helpText("Read timeout in milliseconds for Cloudflare API calls")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue("5000")
+                .add()
+
+                .property()
+                .name(CloudflareTurnstileAuthenticator.CONFIG_ENABLE_DEBUG_LOGGING)
+                .label("Enable Debug Logging")
+                .helpText("Enable JavaScript console logging for troubleshooting Turnstile widget behavior. Disable in production to reduce console noise.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
                 .add()
 
                 .build();
