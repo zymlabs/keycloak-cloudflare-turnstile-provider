@@ -10,7 +10,17 @@ services:
       - 5432:5432
 
   keycloak:
-    image: bitnamilegacy/keycloak:24.0.5
+    image: bitnamilegacy/keycloak:26.0.6
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        # Build Keycloak to detect provider themes
+        echo "Building Keycloak to detect providers and themes..."
+        /opt/bitnami/keycloak/bin/kc.sh build
+
+        # Start Keycloak normally
+        echo "Starting Keycloak..."
+        /opt/bitnami/scripts/keycloak/entrypoint.sh /opt/bitnami/scripts/keycloak/run.sh
     environment:
       KEYCLOAK_DATABASE_HOST: postgres
       KEYCLOAK_DATABASE_PORT: 5432
@@ -21,20 +31,49 @@ services:
       KEYCLOAK_ADMIN_USER: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KEYCLOAK_LOG_LEVEL: INFO
-      KC_LOG_LEVEL_COM_ZYMLABS_KEYCLOAK_CLOUDFLARE_TURNSTILEPROVIDER: DEBUG
       KEYCLOAK_EXTRA_ARGS: --import-realm
+
+      # Development mode settings
+      KEYCLOAK_PRODUCTION: 'false'
+      KC_HOSTNAME_STRICT: 'false'
+      KC_HOSTNAME_STRICT_HTTPS: 'false'
+      KC_HTTP_ENABLED: 'true'
+      KC_LOG_LEVEL_COM_ZYMLABS_KEYCLOAK_CLOUDFLARE_TURNSTILEPROVIDER: DEBUG
+      KEYCLOAK_PROXY: edge
+
+      # Disable HTTPS for development (HTTP-only mode)
+      KEYCLOAK_ENABLE_HTTPS: 'false'
 
       DEBUG: 'true'
       # DEBUG_SUSPEND: 'y' # Wait for debugger to connect before starting Keycloak
       DEBUG_PORT: '*:5005'
 
     ports:
-      - 8080:8080
-      - 5005:5005
+      - 8080:8080   # HTTP
+      - 8443:8443   # HTTPS (auto-generated self-signed cert)
+      - 5005:5005   # Debug port
 
     depends_on:
       - postgres
 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/master"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
     volumes:
       - ./target/zymlabs-cloudflare-turnstile-provider.jar:/opt/bitnami/keycloak/providers/zymlabs-cloudflare-turnstile-provider.jar:rw
       - ./examples/realms:/opt/bitnami/keycloak/data/import:ro
+
+  keycloak-init:
+    image: curlimages/curl:8.5.0
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - ./docker/init-keycloak.sh:/init-keycloak.sh:ro
+    entrypoint: ["/bin/sh", "/init-keycloak.sh"]
+    restart: "no"
+
