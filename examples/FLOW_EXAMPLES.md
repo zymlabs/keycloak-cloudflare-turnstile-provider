@@ -4,7 +4,7 @@ This document explains all the authentication and registration flow examples inc
 
 ## Overview
 
-The demo realm includes **7 pre-configured flows** demonstrating all three implementation methods for both browser authentication and registration:
+The demo realm includes **5 pre-configured flows** demonstrating all three implementation methods for both browser authentication and registration:
 
 ### Implementation Methods
 
@@ -57,82 +57,122 @@ The plugin provides **3 implementation approaches** combining 2 component types:
 
 ## Browser Authentication Flows
 
-### 1. Browser with Turnstile (Separate Page - Default)
+### 1. Browser Turnstile Script Injection (Default)
 
-**Flow Name:** `browser with turnstile`
+**Flow Name:** `browser-turnstile-script-injection`
 
-**Description:** Default browser authentication with Turnstile using Separate Page/Authenticator method
+**Description:** Default browser authentication with Turnstile using Script Injection method
+
+**Configuration:**
+- Authenticator Config: `turnstile-config-script-injection`
+- Widget Mode: `managed`
+- Widget Theme: `auto`
+- Implementation Method: `SCRIPT_INJECTION`
+- Fail Action: `ALLOW`
+- Fail Mode: `FAIL_OPEN`
+
+**Flow Structure:**
+```
+browser-turnstile-script-injection (ALTERNATIVE)
+├── auth-cookie (ALTERNATIVE)
+├── auth-spnego (DISABLED)
+├── identity-provider-redirector (ALTERNATIVE)
+└── turnstile-script-injection-and-forms (ALTERNATIVE)
+    ├── cloudflare-turnstile-authenticator (REQUIRED)
+    └── browser-turnstile-separate-page-conditional-otp (CONDITIONAL)
+        ├── conditional-user-configured (REQUIRED)
+        └── auth-otp-form (REQUIRED)
+```
+
+**How to Use:**
+1. This is set as the default browserFlow in the realm
+2. Users will see the Turnstile widget on a separate page before the login form
+3. After completing Turnstile, users proceed to authentication
+4. Works with any theme (no customization needed)
+
+---
+
+### 2. Browser Turnstile Separate Page
+
+**Flow Name:** `browser-turnstile-separate-page`
+
+**Description:** Browser authentication with Turnstile on a dedicated separate page
 
 **Configuration:**
 - Authenticator Config: `cloudflare-turnstile`
 - Widget Mode: `managed`
 - Widget Theme: `auto`
 - Implementation: Separate Page (Authenticator)
+- Fail Action: `ALLOW`
+- Fail Mode: `FAIL_OPEN`
 
 **Flow Structure:**
 ```
-browser with turnstile (ALTERNATIVE)
+browser-turnstile-separate-page (ALTERNATIVE)
 ├── auth-cookie (ALTERNATIVE)
 ├── auth-spnego (DISABLED)
 ├── identity-provider-redirector (ALTERNATIVE)
 └── turnstile-and-forms (ALTERNATIVE)
     ├── cloudflare-turnstile-authenticator (REQUIRED)
-    └── browser with turnstile forms (REQUIRED)
+    └── browser-turnstile-separate-page-forms (REQUIRED)
         ├── auth-username-password-form (REQUIRED)
-        └── browser with turnstile Browser - Conditional OTP (CONDITIONAL)
+        └── browser-turnstile-separate-page-conditional-otp (CONDITIONAL)
             ├── conditional-user-configured (REQUIRED)
             └── auth-otp-form (REQUIRED)
 ```
 
 **How to Use:**
-1. This is set as the default browserFlow in the realm
-2. Users will see the Turnstile widget on a separate page before the login form
-3. After completing Turnstile, users are redirected to the login form
-4. Works with any theme (no customization needed)
+1. Go to **Authentication** → **Flows** → **Bindings**
+2. Set **Browser Flow** to `browser-turnstile-separate-page`
+3. Users will see the Turnstile widget on a dedicated verification page
+4. After completing Turnstile, users are redirected to the login form
 
 ---
 
-### 2. Browser Turnstile (Alternative Configuration)
+### 3. Browser Turnstile Custom Theme
 
 **Flow Name:** `browser-turnstile-custom-theme`
 
-**Description:** Browser authentication using Separate Page with `invisible` widget mode
+**Description:** Browser authentication using Custom Theme method
 
 **Configuration:**
 - Authenticator Config: `turnstile-config-custom-theme`
-- Widget Mode: `invisible` (runs in background)
-- Widget Theme: `dark`
-- Implementation: Separate Page (Authenticator)
+- Widget Mode: `managed`
+- Widget Theme: `auto`
+- Implementation Method: `CUSTOM_THEME`
+- Fail Action: `ALLOW`
+- Fail Mode: `FAIL_OPEN`
 
-**How to Use:**
-1. Go to **Authentication** → **Flows**
-2. Set **Browser Flow** to `browser-turnstile-custom-theme`
-3. Turnstile runs invisibly on separate page before login form
-
-**Differences from Default:**
-- Widget mode is `invisible` (runs in background, no user interaction)
-- Uses `dark` theme
-- Fail action is `ALLOW` (user-friendly for testing)
-
----
-
-### 4. Browser with Inline Turnstile (Custom Theme)
-
-**Description:** For inline Turnstile on the login form itself (not a separate page), use the included `cloudflare-turnstile` custom theme
+**Flow Structure:**
+```
+browser-turnstile-custom-theme (ALTERNATIVE)
+├── auth-cookie (ALTERNATIVE)
+├── auth-spnego (DISABLED)
+├── identity-provider-redirector (ALTERNATIVE)
+└── turnstile-custom-theme-forms (ALTERNATIVE)
+    ├── cloudflare-turnstile-authenticator (REQUIRED)
+    └── browser-turnstile-separate-page-conditional-otp (CONDITIONAL)
+        ├── conditional-user-configured (REQUIRED)
+        └── auth-otp-form (REQUIRED)
+```
 
 **How to Use:**
 1. Go to **Realm Settings** → **Themes**
-2. Set **Login Theme** to `cloudflare-turnstile`
-3. Use any of the above browser flows
-4. Turnstile widget will appear inline on the login form before the submit button
+2. Set **Login Theme** to `cloudflare-turnstile` or your custom theme
+3. Go to **Authentication** → **Flows** → **Bindings**
+4. Set **Browser Flow** to `browser-turnstile-custom-theme`
+5. Turnstile widget will appear inline on the login form
 
-**Note:** This approach uses theme templates, not FormAction, because Keycloak login forms don't support FormActions
+**Differences from Default:**
+- Requires custom theme with Turnstile support
+- Widget appears inline on login form (not separate page)
+- Full control over widget placement and styling
 
 ---
 
 ## Registration Flows
 
-### 4. Registration Turnstile Script Injection (Default)
+### 1. Registration Turnstile Script Injection (Default)
 
 **Flow Name:** `registration-turnstile-script-injection`
 
@@ -148,21 +188,20 @@ browser with turnstile (ALTERNATIVE)
 ```
 registration-turnstile-script-injection (REQUIRED)
 └── registration-form-script-injection (REQUIRED)
-    ├── registration-page-form (REQUIRED)
     ├── cloudflare-turnstile-form-action (REQUIRED)
-    ├── registration-profile-action (REQUIRED)
-    ├── registration-password-action (REQUIRED)
-    └── registration-recaptcha-action (DISABLED)
+    ├── registration-user-creation (REQUIRED)
+    └── registration-password-action (REQUIRED)
 ```
 
 **How to Use:**
 1. This is set as the default registrationFlow in the realm
 2. Users will see the Turnstile widget on the registration form
-3. Widget is injected via JavaScript below the submit button
+3. Widget is injected via JavaScript into the registration form
+4. Works with any theme (no customization needed)
 
 ---
 
-### 5. Registration Turnstile Custom Theme
+### 2. Registration Turnstile Custom Theme
 
 **Flow Name:** `registration-turnstile-custom-theme`
 
@@ -170,15 +209,27 @@ registration-turnstile-script-injection (REQUIRED)
 
 **Configuration:**
 - Form Action Config: `turnstile-form-config-custom-theme`
-- Widget Mode: `invisible`
-- Widget Theme: `dark`
+- Widget Mode: `managed`
+- Widget Theme: `auto`
 - Implementation Method: `CUSTOM_THEME`
+- Fail Action: `ALLOW`
+- Fail Mode: `FAIL_OPEN`
+
+**Flow Structure:**
+```
+registration-turnstile-custom-theme (REQUIRED)
+└── registration-form-custom-theme (REQUIRED)
+    ├── cloudflare-turnstile-form-action (REQUIRED)
+    ├── registration-user-creation (REQUIRED)
+    └── registration-password-action (REQUIRED)
+```
 
 **How to Use:**
-1. Develop a custom Keycloak theme with Turnstile registration support
-2. Go to **Authentication** → **Flows**
-3. Set **Registration Flow** to `registration-turnstile-custom-theme`
-4. Set realm theme to your custom theme
+1. Go to **Realm Settings** → **Themes**
+2. Set **Login Theme** to `cloudflare-turnstile` or your custom theme
+3. Go to **Authentication** → **Flows** → **Bindings**
+4. Set **Registration Flow** to `registration-turnstile-custom-theme`
+5. Widget will appear inline on registration form via custom theme
 
 ---
 
@@ -192,45 +243,77 @@ All authenticator configurations use Cloudflare's test keys:
 
 **⚠️ Important:** Replace these with your actual Cloudflare Turnstile keys for production use.
 
-#### cloudflare-turnstile (Default - Authenticator)
+#### turnstile-config-script-injection (Authenticator - Browser Default)
 ```json
 {
+  "siteKey": "1x00000000000000000000AA",
+  "secretKey": "1x0000000000000000000000000000000AA",
   "widgetMode": "managed",
   "widgetTheme": "auto",
+  "recordVerifications": "true",
   "failAction": "ALLOW",
-  "failMode": "FAIL_OPEN"
+  "failMode": "FAIL_OPEN",
+  "implementationMethod": "SCRIPT_INJECTION",
+  "enableDebugLogging": "true"
 }
 ```
 
-#### turnstile-config-custom-theme (Authenticator)
+#### cloudflare-turnstile (Authenticator - Separate Page)
 ```json
 {
-  "widgetMode": "invisible",
-  "widgetTheme": "dark",
+  "siteKey": "1x00000000000000000000AA",
+  "secretKey": "1x0000000000000000000000000000000AA",
+  "widgetMode": "managed",
+  "widgetTheme": "auto",
+  "recordVerifications": "true",
   "failAction": "ALLOW",
-  "failMode": "FAIL_OPEN"
+  "failMode": "FAIL_OPEN",
+  "enableDebugLogging": "true"
 }
 ```
 
-#### turnstile-form-config-script-injection (Form Action)
+#### turnstile-config-custom-theme (Authenticator - Custom Theme)
 ```json
 {
+  "siteKey": "1x00000000000000000000AA",
+  "secretKey": "1x0000000000000000000000000000000AA",
+  "widgetMode": "managed",
+  "widgetTheme": "auto",
+  "recordVerifications": "true",
+  "failAction": "ALLOW",
+  "failMode": "FAIL_OPEN",
+  "implementationMethod": "CUSTOM_THEME",
+  "enableDebugLogging": "true"
+}
+```
+
+#### turnstile-form-config-script-injection (Form Action - Registration Default)
+```json
+{
+  "siteKey": "1x00000000000000000000AA",
+  "secretKey": "1x0000000000000000000000000000000AA",
   "widgetMode": "managed",
   "widgetTheme": "auto",
   "implementationMethod": "SCRIPT_INJECTION",
+  "recordVerifications": "true",
   "failAction": "BLOCK",
-  "failMode": "FAIL_OPEN"
+  "failMode": "FAIL_OPEN",
+  "enableDebugLogging": "true"
 }
 ```
 
-#### turnstile-form-config-custom-theme (Form Action)
+#### turnstile-form-config-custom-theme (Form Action - Custom Theme)
 ```json
 {
-  "widgetMode": "invisible",
-  "widgetTheme": "dark",
+  "siteKey": "1x00000000000000000000AA",
+  "secretKey": "1x0000000000000000000000000000000AA",
+  "widgetMode": "managed",
+  "widgetTheme": "auto",
   "implementationMethod": "CUSTOM_THEME",
+  "recordVerifications": "true",
   "failAction": "ALLOW",
-  "failMode": "FAIL_OPEN"
+  "failMode": "FAIL_OPEN",
+  "enableDebugLogging": "true"
 }
 ```
 
@@ -243,7 +326,8 @@ All authenticator configurations use Cloudflare's test keys:
 1. Navigate to **Authentication** → **Flows** in Keycloak admin console
 2. In the **Bindings** tab at the top
 3. Select desired flow from **Browser Flow** dropdown:
-   - `browser with turnstile` (Script Injection - default)
+   - `browser-turnstile-script-injection` (Script Injection - default)
+   - `browser-turnstile-separate-page` (Separate Page)
    - `browser-turnstile-custom-theme` (Custom Theme)
 4. Click **Save**
 
@@ -356,13 +440,13 @@ Before deploying to production:
 
 ## Quick Reference
 
-| Flow Type | Implementation | Component | Flow Name | Config Name | Widget Mode | Theme |
-|-----------|---------------|-----------|-----------|-------------|-------------|-------|
-| Browser/Login | Separate Page | Authenticator | `browser with turnstile` | `cloudflare-turnstile` | managed | auto |
-| Browser/Login | Separate Page | Authenticator | `browser-turnstile-custom-theme` | `turnstile-config-custom-theme` | invisible | dark |
-| Browser/Login | Inline (Custom Theme) | Theme | Use `cloudflare-turnstile` theme | N/A | Configured in theme | auto |
-| Registration | Script Injection | Form Action | `registration-turnstile-script-injection` | `turnstile-form-config-script-injection` | managed | auto |
-| Registration | Custom Theme | Form Action | `registration-turnstile-custom-theme` | `turnstile-form-config-custom-theme` | invisible | dark |
+| Flow Type | Implementation | Component | Flow Name | Config Name | Widget Mode | Theme | Fail Action |
+|-----------|---------------|-----------|-----------|-------------|-------------|-------|-------------|
+| Browser/Login | Script Injection | Authenticator | `browser-turnstile-script-injection` | `turnstile-config-script-injection` | managed | auto | ALLOW |
+| Browser/Login | Separate Page | Authenticator | `browser-turnstile-separate-page` | `cloudflare-turnstile` | managed | auto | ALLOW |
+| Browser/Login | Custom Theme | Authenticator | `browser-turnstile-custom-theme` | `turnstile-config-custom-theme` | managed | auto | ALLOW |
+| Registration | Script Injection | Form Action | `registration-turnstile-script-injection` | `turnstile-form-config-script-injection` | managed | auto | BLOCK |
+| Registration | Custom Theme | Form Action | `registration-turnstile-custom-theme` | `turnstile-form-config-custom-theme` | managed | auto | ALLOW |
 
 ---
 
