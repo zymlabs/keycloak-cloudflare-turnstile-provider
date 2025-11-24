@@ -54,7 +54,10 @@ psql -d keycloak -c "SELECT success, error_codes, timestamp FROM cloudflare_turn
 // Check for errors like:
 // "Failed to load resource: https://challenges.cloudflare.com/..."
 // "Refused to connect to 'https://challenges.cloudflare.com' because it violates CSP"
+// "Refused to load script from 'https://challenges.cloudflare.com/...' because it violates CSP"
 ```
+
+**If you see CSP errors**, this is the most common cause. Jump to [CSP (Content Security Policy) Blocking](#3-csp-content-security-policy-blocking) below for the fix.
 
 ### Widget Shows But Doesn't Load
 
@@ -75,11 +78,70 @@ psql -d keycloak -c "SELECT success, error_codes, timestamp FROM cloudflare_turn
    - Fix: Add all domains to Turnstile site configuration in Cloudflare
 
 3. **CSP (Content Security Policy) Blocking**
-   - Fix: Add to CSP headers:
-     ```
-     script-src 'self' https://challenges.cloudflare.com;
-     frame-src 'self' https://challenges.cloudflare.com;
-     ```
+
+   **Symptoms**:
+   - Browser console shows: `Refused to load script from 'https://challenges.cloudflare.com/...' because it violates CSP`
+   - Widget container appears but stays empty
+   - No Turnstile challenge displayed
+
+   **Cause**: Browser blocking Cloudflare resources due to strict CSP
+
+   **Fix - Configure CSP Headers**:
+
+   **Required CSP directives**:
+   ```
+   script-src 'self' https://challenges.cloudflare.com;
+   frame-src 'self' https://challenges.cloudflare.com;
+   connect-src 'self' https://challenges.cloudflare.com;
+   ```
+
+   **Keycloak Environment Variables**:
+   ```bash
+   export KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com"
+   export KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com"
+   export KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC="'self' https://challenges.cloudflare.com"
+
+   # Restart Keycloak
+   /opt/keycloak/bin/kc.sh start
+   ```
+
+   **Docker Compose**:
+   ```yaml
+   services:
+     keycloak:
+       environment:
+         KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
+         KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
+         KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
+   ```
+
+   **nginx Reverse Proxy**:
+   ```nginx
+   add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;" always;
+   ```
+
+   **Apache Reverse Proxy**:
+   ```apache
+   Header always set Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
+   ```
+
+   **Verify CSP is Active**:
+   ```bash
+   # Check HTTP headers
+   curl -I https://your-keycloak.com/realms/myrealm/protocol/openid-connect/auth | grep -i content-security-policy
+
+   # Should show CSP header with Cloudflare domains
+   ```
+
+   **Verify in Browser**:
+   1. Open login page
+   2. Press F12 → Console tab
+   3. Reload page
+   4. Should NOT see CSP violation errors
+   5. Check Network tab → Filter "challenges.cloudflare.com"
+   6. All requests should be status 200
+
+   See [CONFIGURATION.md](CONFIGURATION.md#content-security-policy) for complete CSP configuration guide.
 
 ### Widget Appears Multiple Times
 

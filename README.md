@@ -6,40 +6,37 @@ A Keycloak authentication provider that integrates Cloudflare Turnstile CAPTCHA 
 
 ### Implementation Options
 
-This provider offers **four flexible implementation approaches** that work for both login and registration protection. Choose based on your deployment requirements and maintenance preferences:
+This provider offers **three flexible implementation approaches** that work for both login and registration protection. Choose based on your deployment requirements and maintenance preferences:
 
 | Option | Approach | Theme Required | JavaScript | Maintenance | When to Use |
 |--------|----------|----------------|------------|-------------|-------------|
 | **1. Separate Page** ⭐ | Standalone verification page | ❌ No | ❌ No | ✅ Low | **Recommended** - Maximum security, works everywhere |
 | **2. Script Injection** | JavaScript DOM manipulation | ❌ No | ✅ Yes | ✅ Low | Modern browsers, seamless inline UX |
-| **3. Copied Template** | Bundled template in JAR | ❌ No | ❌ No | ⚠️ Medium | Native integration, comfortable with template maintenance |
-| **4. Custom Theme** | Standard Keycloak theme | ✅ Yes | ❌ No | ⚠️ Medium | Standard theme approach, single-realm deployments |
+| **3. Custom Theme** | Standard Keycloak theme | ✅ Yes | ❌ No | ⚠️ Medium | Standard theme approach, single-realm deployments |
 
 **Key Characteristics:**
-- **Flexible deployment** - Options 1-3 work without custom themes; Option 4 uses standard theme approach
+- **Flexible deployment** - Options 1-2 work without custom themes; Option 3 uses standard theme approach
 - **Shared configuration** - All options reuse the same authenticator settings
 - **Server-side validation** - All options enforce verification on the server
 
 ### Login Protection
 
-Add Cloudflare Turnstile verification to your authentication flow using any of the [four implementation options](#implementation-options) above.
+Add Cloudflare Turnstile verification to your authentication flow using any of the [three implementation options](#implementation-options) above.
 
 **Available Authenticators:**
 - Cloudflare Turnstile (Separate Page) ⭐ - Recommended
 - Cloudflare Turnstile - Login (Script Injection)
-- Cloudflare Turnstile - Login (Copied Template)
 - Cloudflare Turnstile - Login (Custom Theme)
 
 See [Usage Examples - Login Protection](#example-1-login-protection) for detailed setup instructions.
 
 ### Registration Protection
 
-Add Cloudflare Turnstile verification to your registration flow using any of the [four implementation options](#implementation-options) above.
+Add Cloudflare Turnstile verification to your registration flow using any of the [three implementation options](#implementation-options) above.
 
 **Available Form Actions:**
 - Cloudflare Turnstile (Registration) - Separate Page ⭐ - Recommended
 - Cloudflare Turnstile (Script Injection)
-- Cloudflare Turnstile (Copied Template)
 - Cloudflare Turnstile (Custom Theme)
 
 See [docs/REGISTRATION.md](docs/REGISTRATION.md) for detailed registration setup guide.
@@ -49,7 +46,7 @@ See [docs/REGISTRATION.md](docs/REGISTRATION.md) for detailed registration setup
 - **Configurable themes** - Light, dark, or auto theme matching
 
 ### Network & Security
-- **IP allowlist/blocklist** - Skip or block verification based on IP/CIDR ranges (IPv4 and IPv6 support)
+- **IP allowlist/blocklist** - Handle trusted IPs specially with configurable behavior modes (SKIP_VERIFICATION or VERIFY_BUT_ALLOW), or block untrusted IPs based on IP/CIDR ranges (IPv4 and IPv6 support)
 - **Flexible failure handling** - Block, allow, or require MFA when verification fails
 - **Fail-safe modes** - Configure FAIL_OPEN or FAIL_CLOSED behavior for API errors
 
@@ -64,6 +61,25 @@ See [docs/REGISTRATION.md](docs/REGISTRATION.md) for detailed registration setup
 - Keycloak 24.0.0 or later
 - Java 17 or later
 - Cloudflare Turnstile site key and secret key (get them at https://dash.cloudflare.com/?to=/:account/turnstile)
+
+## Theme Variants
+
+For **Custom Theme** implementation (Option 4), this provider includes two theme variants to ensure compatibility across different Keycloak versions:
+
+| Theme Variant | Parent Theme | Keycloak Version | PatternFly | Status |
+|---------------|--------------|------------------|------------|--------|
+| **cloudflare-turnstile** | keycloak.v2 | 25-26+ | 5 | ✅ Recommended |
+| **cloudflare-turnstile-legacy** | keycloak | 24.x | 3/4 | ⚠️ Legacy Support |
+
+### Quick Selection Guide
+
+- **Keycloak 26+**: Use `cloudflare-turnstile` (modern variant)
+- **Keycloak 24.x**: Use `cloudflare-turnstile-legacy` (legacy variant)
+- **Keycloak 25.x**: Try `cloudflare-turnstile` first, fallback to legacy if issues
+
+**Note**: Theme selection only applies to **Custom Theme** implementation (Option 3). Other implementation options (Separate Page, Script Injection) are theme-agnostic and work with any Keycloak theme.
+
+**See [docs/THEME-SELECTION.md](docs/THEME-SELECTION.md) for detailed theme selection guide.**
 
 ## Installation
 
@@ -108,6 +124,71 @@ Initializing CloudflareTurnstileJpaEntityProviderFactory
 ```
 
 The database table `cloudflare_turnstile_check` will be created automatically via Liquibase.
+
+### 4. Configure Content Security Policy
+
+Cloudflare Turnstile requires specific Content Security Policy (CSP) settings to load the verification widget from Cloudflare's servers.
+
+**Required CSP Directives** (minimum from Cloudflare):
+
+```
+script-src https://challenges.cloudflare.com
+frame-src https://challenges.cloudflare.com
+```
+
+**Recommended CSP Configuration** (for Keycloak):
+
+```
+script-src 'self' https://challenges.cloudflare.com;
+frame-src 'self' https://challenges.cloudflare.com;
+connect-src 'self' https://challenges.cloudflare.com;
+```
+
+#### Keycloak Configuration
+
+**Via Environment Variables**:
+
+```bash
+# Add to Keycloak startup
+export KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com"
+export KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com"
+
+/opt/keycloak/bin/kc.sh start
+```
+
+**Via Docker**:
+
+```yaml
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.0
+    environment:
+      KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
+      KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
+```
+
+#### Reverse Proxy Configuration
+
+**nginx**:
+
+```nginx
+add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;";
+```
+
+**Apache**:
+
+```apache
+Header set Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
+```
+
+#### Verify CSP Configuration
+
+1. Open browser DevTools (F12) on login page
+2. Check Console for CSP errors
+3. Should see no errors like "Refused to load..."
+4. Turnstile widget should load successfully
+
+For detailed CSP troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md#csp-content-security-policy-blocking).
 
 ## Configuration
 
@@ -162,7 +243,7 @@ The database table `cloudflare_turnstile_check` will be created automatically vi
 
 ### Example 1: Login Protection
 
-You can choose between four implementation approaches:
+You can choose between three implementation approaches:
 
 **Option 1: Separate Verification Page (Recommended)**
 
@@ -191,24 +272,12 @@ You can choose between four implementation approaches:
 - Widget appears before the login button
 - User completes widget and submits credentials
 
-**Option 3: Inline Widget (Copied Template)**
-
-1. Copy the "Browser" flow
-2. Expand **"Username Password Form"** or **"Browser - Conditional OTP"** subflow
-3. Click **Add execution** within the subflow
-4. Select **"Cloudflare Turnstile - Login (Copied Template)"**
-5. Set as REQUIRED
-6. Configure with same settings
-
-**User Experience:**
-- User sees login form with Turnstile widget natively embedded
-- Widget appears before the login button
-- User completes widget and submits credentials
-
-**Option 4: Inline Widget (Custom Theme)**
+**Option 3: Inline Widget (Custom Theme)**
 
 1. Go to **Realm Settings** → **Themes**
-2. Under **Login Theme**, select **cloudflare-turnstile**
+2. Under **Login Theme**, select:
+   - **cloudflare-turnstile** (for Keycloak 25-26+)
+   - **cloudflare-turnstile-legacy** (for Keycloak 24.x)
 3. Click **Save**
 4. Copy the "Browser" flow
 5. Expand **"Username Password Form"** or **"Browser - Conditional OTP"** subflow
@@ -221,6 +290,8 @@ You can choose between four implementation approaches:
 - User sees login form with Turnstile widget natively embedded (via theme)
 - Widget appears before the login button
 - User completes widget and submits credentials
+
+**Note**: See [Theme Variants](#theme-variants) section above for theme selection guidance.
 
 **See [docs/SETUP.md](docs/SETUP.md) for detailed setup instructions.**
 
@@ -257,25 +328,12 @@ You can choose between four implementation approaches:
 - User completes form and Turnstile challenge
 - User submits registration
 
-**Option 3: Copied Template (Native Integration)**
-
-1. Go to **Authentication** → **Flows** → **Registration**
-2. Expand **"Registration form"** subflow
-3. Click **Add execution** within the subflow
-4. Select **"Cloudflare Turnstile (Copied Template)"**
-5. Set as REQUIRED
-6. Configure with same settings as login flow
-
-**User Experience:**
-- User clicks "Register" link
-- Registration form appears with Turnstile widget natively embedded
-- User completes form and Turnstile challenge
-- User submits registration
-
-**Option 4: Custom Theme (Standard Keycloak Approach)**
+**Option 3: Custom Theme (Standard Keycloak Approach)**
 
 1. Go to **Realm Settings** → **Themes**
-2. Under **Login Theme**, select **cloudflare-turnstile**
+2. Under **Login Theme**, select:
+   - **cloudflare-turnstile** (for Keycloak 25-26+)
+   - **cloudflare-turnstile-legacy** (for Keycloak 24.x)
 3. Click **Save**
 4. Go to **Authentication** → **Flows** → **Registration**
 5. Expand **"Registration form"** subflow
@@ -289,6 +347,8 @@ You can choose between four implementation approaches:
 - Registration form appears with Turnstile widget natively embedded (via theme)
 - User completes form and Turnstile challenge
 - User submits registration
+
+**Note**: See [Theme Variants](#theme-variants) section above for theme selection guidance.
 
 **See [docs/REGISTRATION.md](docs/REGISTRATION.md) for complete registration guide.**
 
@@ -369,18 +429,100 @@ LIMIT 10;
 
 ## Event Logging
 
-The authenticator logs the following event details:
+The authenticator logs comprehensive event details for security monitoring and audit compliance.
 
-- `cloudflare_turnstile_success` - Whether verification succeeded (true/false)
+### Event Detail Fields
+
+All Turnstile verification attempts log the following fields to Keycloak events:
+
+#### Basic Verification Fields
+- `cloudflare_turnstile_success` - Verification result: "true" or "false"
 - `cloudflare_turnstile_hostname` - Hostname from Cloudflare response
-- `cloudflare_turnstile_errors` - Error codes if verification failed
-- `cloudflare_turnstile_action` - Action taken (blocked, allowed, mfa_required)
-- `cloudflare_turnstile_result` - Result descriptor (e.g., blocked_ip, verification_error)
+- `cloudflare_turnstile_errors` - Comma-separated error codes (if verification failed)
+- `cloudflare_turnstile_flow_type` - Flow type: "login" or "registration"
 - `ip_address` - User's IP address
 
-These events can be viewed in:
-- Keycloak Admin Console → Events → Login Events
-- External event listeners (e.g., sent to SIEM systems)
+#### Action and Result Fields
+- `cloudflare_turnstile_action` - Action taken:
+  - `"allowed"` - Verification passed, authentication allowed
+  - `"mfa_required"` - Verification failed, MFA required
+  - `"blocked"` - Verification failed, authentication denied
+  - `"ip_allowlisted_verify_but_allow"` - Allowlisted IP with verification audit
+- `cloudflare_turnstile_result` - Result descriptor:
+  - `"blocked_ip"` - IP was on blocklist
+  - `"ip_allowlisted_skip_verification"` - Allowlisted IP, verification skipped
+  - `"verification_error"` - API error with FAIL_CLOSED
+  - `"verification_error_fail_open"` - API error with FAIL_OPEN
+- `error_message` - Error message (for verification errors)
+
+#### Configuration Context Fields (Audit Trail)
+- `cloudflare_turnstile_fail_mode` - Configured error handling mode: "FAIL_OPEN" or "FAIL_CLOSED"
+- `cloudflare_turnstile_fail_action` - Configured failure action: "ALLOW", "BLOCK", or "REQUIRE_MFA"
+- `cloudflare_turnstile_allowlist_behavior` - IP allowlist behavior: "SKIP_VERIFICATION" or "VERIFY_BUT_ALLOW"
+- `cloudflare_turnstile_implementation_method` - Implementation method: "SEPARATE_PAGE", "SCRIPT_INJECTION", or "CUSTOM_THEME"
+
+#### IP Processing Status Fields (Audit Trail)
+- `cloudflare_turnstile_ip_allowlisted` - IP was on allowlist: "true" or "false"
+- `cloudflare_turnstile_ip_blocklisted` - IP was on blocklist: "true" or "false"
+- `cloudflare_turnstile_verification_skipped` - Verification was skipped: "true" or "false"
+
+#### Final Outcome Fields (Audit Trail)
+- `cloudflare_turnstile_authentication_allowed` - Final authentication outcome: "true" or "false"
+- `cloudflare_turnstile_action_reason` - Human-readable reason for action taken
+
+### Viewing Events
+
+**Keycloak Admin Console:**
+1. Navigate to **Events** → **Login Events**
+2. Click on any event
+3. Scroll to **Details** section
+4. All `cloudflare_turnstile_*` fields will be listed
+
+**External Event Listeners:**
+Events can be sent to SIEM systems, log aggregators, or analytics platforms for:
+- Security monitoring and alerting
+- Compliance reporting
+- Behavioral analysis
+- Threat detection
+
+### Example Event Details
+
+**Successful Verification:**
+```
+cloudflare_turnstile_success=true
+cloudflare_turnstile_hostname=auth.example.com
+cloudflare_turnstile_flow_type=login
+cloudflare_turnstile_fail_mode=FAIL_CLOSED
+cloudflare_turnstile_fail_action=BLOCK
+cloudflare_turnstile_allowlist_behavior=VERIFY_BUT_ALLOW
+cloudflare_turnstile_implementation_method=SEPARATE_PAGE
+cloudflare_turnstile_ip_allowlisted=false
+cloudflare_turnstile_ip_blocklisted=false
+cloudflare_turnstile_verification_skipped=false
+cloudflare_turnstile_authentication_allowed=true
+cloudflare_turnstile_action_reason=Success
+ip_address=203.0.113.1
+```
+
+**IP Blocklist Event:**
+```
+cloudflare_turnstile_result=blocked_ip
+cloudflare_turnstile_ip_blocklisted=true
+cloudflare_turnstile_authentication_allowed=false
+cloudflare_turnstile_action_reason=Blocked - IP blocklisted
+ip_address=198.51.100.50
+```
+
+**Allowlist Skip Verification:**
+```
+cloudflare_turnstile_result=ip_allowlisted_skip_verification
+cloudflare_turnstile_allowlist_behavior=SKIP_VERIFICATION
+cloudflare_turnstile_ip_allowlisted=true
+cloudflare_turnstile_verification_skipped=true
+cloudflare_turnstile_authentication_allowed=true
+cloudflare_turnstile_action_reason=Allowlisted - SKIP_VERIFICATION
+ip_address=192.168.1.100
+```
 
 ## Development
 
@@ -420,6 +562,7 @@ docker-compose up -d
 - Check browser console for JavaScript errors
 - Verify the site key is correct
 - Ensure `https://challenges.cloudflare.com` is accessible
+- **Verify Content Security Policy (CSP) is configured** - See [CSP Configuration](#4-configure-content-security-policy) above
 
 ### Verification always failing
 

@@ -56,7 +56,23 @@ CREATE TABLE cloudflare_turnstile_check (
     hostname VARCHAR(255),
     event_id VARCHAR(36),
     session_id VARCHAR(36),
-    raw_response TEXT
+    flow_type VARCHAR(50),
+    raw_response TEXT,
+
+    -- Configuration context columns (added in v1.1)
+    fail_mode VARCHAR(20),
+    fail_action VARCHAR(20),
+    allowlist_behavior VARCHAR(30),
+    implementation_method VARCHAR(30),
+
+    -- IP processing status columns (added in v1.1)
+    ip_allowlisted BOOLEAN NOT NULL DEFAULT FALSE,
+    ip_blocklisted BOOLEAN NOT NULL DEFAULT FALSE,
+    verification_skipped BOOLEAN NOT NULL DEFAULT FALSE,
+
+    -- Final outcome columns (added in v1.1)
+    authentication_allowed BOOLEAN NOT NULL DEFAULT FALSE,
+    action_reason VARCHAR(100)
 );
 ```
 
@@ -77,7 +93,17 @@ CREATE TABLE cloudflare_turnstile_check (
 | `hostname` | VARCHAR(255) | Yes | Hostname from Cloudflare response |
 | `event_id` | VARCHAR(36) | Yes | Keycloak event ID for correlation |
 | `session_id` | VARCHAR(36) | Yes | Keycloak session ID |
+| `flow_type` | VARCHAR(50) | Yes | Flow type: "login" or "registration" |
 | `raw_response` | TEXT | Yes | Complete JSON response from Cloudflare |
+| `fail_mode` | VARCHAR(20) | Yes | Configured error handling mode: FAIL_OPEN, FAIL_CLOSED |
+| `fail_action` | VARCHAR(20) | Yes | Configured verification failure action: BLOCK, ALLOW, REQUIRE_MFA |
+| `allowlist_behavior` | VARCHAR(30) | Yes | IP allowlist behavior: SKIP_VERIFICATION, VERIFY_BUT_ALLOW |
+| `implementation_method` | VARCHAR(30) | Yes | Implementation method: SEPARATE_PAGE, SCRIPT_INJECTION, CUSTOM_THEME |
+| `ip_allowlisted` | BOOLEAN | No | Whether IP was on the allowlist at time of verification |
+| `ip_blocklisted` | BOOLEAN | No | Whether IP was on the blocklist at time of verification |
+| `verification_skipped` | BOOLEAN | No | Whether Cloudflare API verification was skipped |
+| `authentication_allowed` | BOOLEAN | No | Final outcome: whether authentication was allowed |
+| `action_reason` | VARCHAR(100) | Yes | Human-readable reason for the action taken |
 
 ### Pre-Authentication Records
 
@@ -89,7 +115,7 @@ When Turnstile runs before credentials are entered:
 
 ## Indexes
 
-Six indexes optimize common query patterns:
+Fifteen indexes optimize common query patterns:
 
 ### 1. idx_turnstile_user_id
 ```sql
@@ -133,9 +159,68 @@ CREATE INDEX idx_turnstile_session_id ON cloudflare_turnstile_check(session_id);
 **Purpose**: Session-based queries
 **Used by**: Session analysis, multi-step flow tracking
 
+### 7. idx_turnstile_flow_type
+```sql
+CREATE INDEX idx_turnstile_flow_type ON cloudflare_turnstile_check(flow_type);
+```
+**Purpose**: Filter by flow type (login vs registration)
+**Used by**: Flow-specific analytics, login vs registration success rate analysis
+
+### 8. idx_turnstile_auth_allowed
+```sql
+CREATE INDEX idx_turnstile_auth_allowed ON cloudflare_turnstile_check(authentication_allowed);
+```
+**Purpose**: Fast filtering by final authentication outcome
+**Used by**: Blocked access reports, allowed access reports, security monitoring
+
+### 9. idx_turnstile_fail_mode
+```sql
+CREATE INDEX idx_turnstile_fail_mode ON cloudflare_turnstile_check(fail_mode);
+```
+**Purpose**: Analysis by error handling mode configuration
+**Used by**: Configuration effectiveness analysis, FAIL_OPEN vs FAIL_CLOSED comparison
+
+### 10. idx_turnstile_fail_action
+```sql
+CREATE INDEX idx_turnstile_fail_action ON cloudflare_turnstile_check(fail_action);
+```
+**Purpose**: Analysis by failure action configuration
+**Used by**: BLOCK vs ALLOW vs REQUIRE_MFA effectiveness analysis
+
+### 11. idx_turnstile_ip_allowlisted
+```sql
+CREATE INDEX idx_turnstile_ip_allowlisted ON cloudflare_turnstile_check(ip_allowlisted);
+```
+**Purpose**: Fast filtering of allowlisted IP verifications
+**Used by**: Allowlist usage analysis, allowlist effectiveness reports
+
+### 12. idx_turnstile_verification_skipped
+```sql
+CREATE INDEX idx_turnstile_verification_skipped ON cloudflare_turnstile_check(verification_skipped);
+```
+**Purpose**: Identify verifications that skipped Cloudflare API
+**Used by**: SKIP_VERIFICATION mode analysis, API quota savings calculation
+
+### 13. idx_turnstile_action_reason
+```sql
+CREATE INDEX idx_turnstile_action_reason ON cloudflare_turnstile_check(action_reason);
+```
+**Purpose**: Group verifications by action reason
+**Used by**: Decision distribution analysis, troubleshooting specific outcomes
+
+### 14-15. Composite Indexes
+
+#### idx_turnstile_outcome_analysis
+```sql
+CREATE INDEX idx_turnstile_outcome_analysis
+ON cloudflare_turnstile_check(realm_id, authentication_allowed, success, timestamp);
+```
+**Purpose**: Optimized for comprehensive outcome analysis queries
+**Used by**: Multi-dimensional analytics, realm-wide security dashboards, compliance reporting
+
 ## Named Queries
 
-Four JPA named queries are defined on the entity:
+Five JPA named queries are defined on the entity:
 
 ### findByUserId
 ```java
@@ -177,6 +262,24 @@ List<CloudflareTurnstileCheckEntity> checks = em
              WHERE c.realmId = :realmId
              AND c.success = false
              ORDER BY c.timestamp DESC")
+```
+
+### findByFlowType
+```java
+@NamedQuery(name = "findByFlowType",
+    query = "SELECT c FROM CloudflareTurnstileCheckEntity c
+             WHERE c.realmId = :realmId
+             AND c.flowType = :flowType
+             ORDER BY c.timestamp DESC")
+```
+
+**Usage**:
+```java
+List<CloudflareTurnstileCheckEntity> loginChecks = em
+    .createNamedQuery("findByFlowType", CloudflareTurnstileCheckEntity.class)
+    .setParameter("realmId", realmId)
+    .setParameter("flowType", "login")
+    .getResultList();
 ```
 
 ## Common SQL Queries
@@ -320,6 +423,129 @@ WHERE timestamp > NOW() - INTERVAL '30 DAYS'
 GROUP BY DATE(timestamp)
 ORDER BY date DESC;
 ```
+
+### Audit Analytics
+
+#### Authentication Outcome Analysis
+```sql
+SELECT
+    authentication_allowed,
+    success,
+    COUNT(*) as count,
+    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) as percentage
+FROM cloudflare_turnstile_check
+WHERE timestamp > NOW() - INTERVAL '7 DAYS'
+GROUP BY authentication_allowed, success
+ORDER BY count DESC;
+```
+
+**Purpose**: Understand the relationship between verification success and final authentication outcomes
+
+**Example Results**:
+| authentication_allowed | success | count | percentage |
+|------------------------|---------|-------|------------|
+| true | true | 45,230 | 89.5% |
+| false | false | 5,120 | 10.1% |
+| true | false | 180 | 0.4% |
+
+#### Allowlist Behavior Effectiveness
+```sql
+SELECT
+    allowlist_behavior,
+    ip_allowlisted,
+    verification_skipped,
+    authentication_allowed,
+    COUNT(*) as occurrences
+FROM cloudflare_turnstile_check
+WHERE ip_allowlisted = true
+  AND timestamp > NOW() - INTERVAL '7 DAYS'
+GROUP BY allowlist_behavior, ip_allowlisted, verification_skipped, authentication_allowed
+ORDER BY occurrences DESC;
+```
+
+**Purpose**: Analyze how SKIP_VERIFICATION vs VERIFY_BUT_ALLOW modes are being used
+
+#### Action Reason Distribution
+```sql
+SELECT
+    action_reason,
+    authentication_allowed,
+    COUNT(*) as count,
+    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) as percentage
+FROM cloudflare_turnstile_check
+WHERE action_reason IS NOT NULL
+  AND timestamp > NOW() - INTERVAL '30 DAYS'
+GROUP BY action_reason, authentication_allowed
+ORDER BY count DESC
+LIMIT 20;
+```
+
+**Purpose**: See the distribution of different decision reasons (e.g., "Success", "Blocked - IP blocklisted", "Allowlisted - SKIP_VERIFICATION")
+
+**Example Results**:
+| action_reason | authentication_allowed | count | percentage |
+|---------------|------------------------|-------|------------|
+| Success | true | 42,150 | 83.2% |
+| Failed - BLOCK | false | 7,890 | 15.6% |
+| Allowlisted - SKIP_VERIFICATION | true | 450 | 0.9% |
+| Error - FAIL_OPEN | true | 110 | 0.2% |
+
+#### Configuration Effectiveness Analysis
+```sql
+SELECT
+    fail_mode,
+    fail_action,
+    COUNT(*) as total_checks,
+    SUM(CASE WHEN authentication_allowed THEN 1 ELSE 0 END) as allowed,
+    SUM(CASE WHEN NOT authentication_allowed THEN 1 ELSE 0 END) as blocked,
+    ROUND(100.0 * SUM(CASE WHEN authentication_allowed THEN 1 ELSE 0 END) / COUNT(*), 2) as allow_rate_pct
+FROM cloudflare_turnstile_check
+WHERE timestamp > NOW() - INTERVAL '30 DAYS'
+GROUP BY fail_mode, fail_action
+ORDER BY total_checks DESC;
+```
+
+**Purpose**: Compare different configuration combinations to optimize security vs usability
+
+#### Flow Type Comparison
+```sql
+SELECT
+    flow_type,
+    COUNT(*) as total,
+    SUM(CASE WHEN success THEN 1 ELSE 0 END) as successful,
+    SUM(CASE WHEN NOT success THEN 1 ELSE 0 END) as failed,
+    ROUND(100.0 * SUM(CASE WHEN success THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate_pct
+FROM cloudflare_turnstile_check
+WHERE timestamp > NOW() - INTERVAL '7 DAYS'
+  AND flow_type IS NOT NULL
+GROUP BY flow_type;
+```
+
+**Purpose**: Compare login vs registration verification success rates
+
+**Example Results**:
+| flow_type | total | successful | failed | success_rate_pct |
+|-----------|-------|------------|--------|------------------|
+| login | 38,450 | 36,890 | 1,560 | 95.94 |
+| registration | 12,300 | 11,750 | 550 | 95.53 |
+
+#### IP Blocklist Audit
+```sql
+SELECT
+    ip_address,
+    COUNT(*) as blocked_attempts,
+    MIN(timestamp) as first_blocked,
+    MAX(timestamp) as last_blocked,
+    COUNT(DISTINCT DATE(timestamp)) as days_active
+FROM cloudflare_turnstile_check
+WHERE ip_blocklisted = true
+  AND timestamp > NOW() - INTERVAL '30 DAYS'
+GROUP BY ip_address
+ORDER BY blocked_attempts DESC
+LIMIT 50;
+```
+
+**Purpose**: Monitor blocklist effectiveness and identify persistent attackers
 
 ## Data Lifecycle
 

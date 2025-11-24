@@ -26,8 +26,8 @@
   "oauth2DeviceCodeLifespan": 600,
   "oauth2DevicePollingInterval": 5,
   "enabled": true,
-  "sslRequired": "external",
-  "registrationAllowed": false,
+  "sslRequired": "none",
+  "registrationAllowed": true,
   "registrationEmailAsUsername": false,
   "rememberMe": false,
   "verifyEmail": false,
@@ -113,8 +113,8 @@
   "supportedLocales": [],
   "authenticationFlows": [
     {
-      "alias": "browser with turnstile",
-      "description": "browser based authentication with Cloudflare Turnstile pre-authentication",
+      "alias": "browser-turnstile-script-injection",
+      "description": "Browser authentication with Cloudflare Turnstile (Script Injection - default)",
       "providerId": "basic-flow",
       "topLevel": true,
       "builtIn": false,
@@ -144,27 +144,111 @@
           "userSetupAllowed": false
         },
         {
-          "authenticatorConfig": "cloudflare-turnstile",
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "autheticatorFlow": true,
+          "flowAlias": "turnstile-script-injection-and-forms",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "turnstile-script-injection-and-forms",
+      "description": "Cloudflare Turnstile (Script Injection) with integrated login form and optional OTP",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorConfig": "turnstile-config-script-injection",
           "authenticator": "cloudflare-turnstile-authenticator",
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
-          "priority": 30,
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "autheticatorFlow": true,
+          "flowAlias": "browser-turnstile-separate-page-conditional-otp",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-turnstile-separate-page",
+      "description": "Browser authentication with Cloudflare Turnstile (Separate Page)",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-spnego",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "identity-provider-redirector",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 25,
           "autheticatorFlow": false,
           "userSetupAllowed": false
         },
         {
           "authenticatorFlow": true,
           "requirement": "ALTERNATIVE",
-          "priority": 40,
+          "priority": 30,
           "autheticatorFlow": true,
-          "flowAlias": "browser with turnstile forms",
+          "flowAlias": "turnstile-and-forms",
           "userSetupAllowed": false
         }
       ]
     },
     {
-      "alias": "browser with turnstile forms",
-      "description": "Username, password, otp and other auth forms.",
+      "alias": "turnstile-and-forms",
+      "description": "Cloudflare Turnstile verification followed by login form",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorConfig": "cloudflare-turnstile",
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": true,
+          "flowAlias": "browser-turnstile-separate-page-forms",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-turnstile-separate-page-forms",
+      "description": "Username, password, otp and other auth forms",
       "providerId": "basic-flow",
       "topLevel": false,
       "builtIn": false,
@@ -182,13 +266,13 @@
           "requirement": "CONDITIONAL",
           "priority": 20,
           "autheticatorFlow": true,
-          "flowAlias": "browser with turnstile Browser - Conditional OTP",
+          "flowAlias": "browser-turnstile-separate-page-conditional-otp",
           "userSetupAllowed": false
         }
       ]
     },
     {
-      "alias": "browser with turnstile Browser - Conditional OTP",
+      "alias": "browser-turnstile-separate-page-conditional-otp",
       "description": "Flow to determine if the OTP is required for the authentication",
       "providerId": "basic-flow",
       "topLevel": false,
@@ -211,9 +295,198 @@
           "userSetupAllowed": false
         }
       ]
+    },
+    {
+      "alias": "browser-turnstile-custom-theme",
+      "description": "Browser authentication with Turnstile Custom Theme method",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-spnego",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "identity-provider-redirector",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 25,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "autheticatorFlow": true,
+          "flowAlias": "turnstile-custom-theme-forms",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "turnstile-custom-theme-forms",
+      "description": "Turnstile Custom Theme + Forms",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorConfig": "turnstile-config-custom-theme",
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "autheticatorFlow": true,
+          "flowAlias": "browser-turnstile-separate-page-conditional-otp",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "registration-turnstile-script-injection",
+      "description": "Registration flow with Turnstile Script Injection (default)",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-page-form",
+          "authenticatorFlow": true,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": true,
+          "flowAlias": "registration-form-script-injection",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "registration-form-script-injection",
+      "description": "Registration form with Turnstile Script Injection",
+      "providerId": "form-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorConfig": "turnstile-form-config-script-injection",
+          "authenticator": "cloudflare-turnstile-form-action",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-user-creation",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-password-action",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "registration-turnstile-custom-theme",
+      "description": "Registration flow with Turnstile Custom Theme method",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-page-form",
+          "authenticatorFlow": true,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": true,
+          "flowAlias": "registration-form-custom-theme",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "registration-form-custom-theme",
+      "description": "Registration form with Turnstile Custom Theme",
+      "providerId": "form-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorConfig": "turnstile-form-config-custom-theme",
+          "authenticator": "cloudflare-turnstile-form-action",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-user-creation",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-password-action",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
     }
   ],
   "authenticatorConfig": [
+    {
+      "alias": "turnstile-config-script-injection",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "failAction": "ALLOW",
+        "failMode": "FAIL_OPEN",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true",
+        "implementationMethod": "SCRIPT_INJECTION"
+      }
+    },
     {
       "alias": "cloudflare-turnstile",
       "config": {
@@ -227,7 +500,62 @@
         "failAction": "ALLOW",
         "failMode": "FAIL_OPEN",
         "connectTimeout": "5000",
-        "readTimeout": "5000"
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "turnstile-config-custom-theme",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "failAction": "ALLOW",
+        "failMode": "FAIL_OPEN",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true",
+        "implementationMethod": "CUSTOM_THEME"
+      }
+    },
+    {
+      "alias": "turnstile-form-config-script-injection",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_OPEN",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "turnstile-form-config-custom-theme",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "CUSTOM_THEME",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "failAction": "ALLOW",
+        "failMode": "FAIL_OPEN",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
       }
     }
   ],
@@ -314,7 +642,8 @@
       "config": {}
     }
   ],
-  "browserFlow": "browser with turnstile",
+  "browserFlow": "browser-turnstile-script-injection",
+  "registrationFlow": "registration-turnstile-script-injection",
   "attributes": {
     "cibaBackchannelTokenDeliveryMode": "poll",
     "cibaExpiresIn": "120",

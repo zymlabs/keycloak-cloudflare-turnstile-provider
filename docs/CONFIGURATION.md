@@ -4,7 +4,8 @@ Complete reference for all configuration options in the Cloudflare Turnstile Key
 
 ## Table of Contents
 
-1. [Authenticator Configuration](#authenticator-configuration)
+1. [Content Security Policy](#content-security-policy)
+2. [Authenticator Configuration](#authenticator-configuration)
 2. [Widget Configuration](#widget-configuration)
    - [Widget Mode](#widget-mode)
    - [Widget Theme](#widget-theme)
@@ -19,6 +20,203 @@ Complete reference for all configuration options in the Cloudflare Turnstile Key
    - [Connection Timeout](#connect-timeout-ms)
    - [Read Timeout](#read-timeout-ms)
 7. [Advanced Scenarios](#advanced-scenarios)
+
+## Content Security Policy
+
+**REQUIRED**: Cloudflare Turnstile requires Content Security Policy (CSP) configuration to function properly.
+
+### Overview
+
+The Turnstile widget loads JavaScript and iframe content from Cloudflare's servers at `challenges.cloudflare.com`. Modern browsers will block these external resources unless explicitly allowed in your CSP configuration.
+
+### Required CSP Directives
+
+**Minimum (from Cloudflare)**:
+```
+script-src https://challenges.cloudflare.com
+frame-src https://challenges.cloudflare.com
+```
+
+**Recommended for Keycloak**:
+```
+script-src 'self' https://challenges.cloudflare.com
+frame-src 'self' https://challenges.cloudflare.com
+connect-src 'self' https://challenges.cloudflare.com
+```
+
+The `'self'` directive allows Keycloak's own scripts to run, and `connect-src` enables AJAX requests that Turnstile may make.
+
+### Configuration Locations
+
+CSP can be configured at different layers. Choose the method that best fits your infrastructure:
+
+#### 1. Keycloak Environment Variables
+
+Set CSP via Keycloak's SPI configuration:
+
+```bash
+export KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com"
+export KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com"
+export KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC="'self' https://challenges.cloudflare.com"
+```
+
+**Pros**: Direct configuration, no additional infrastructure needed
+**Cons**: Requires Keycloak restart to change
+
+#### 2. Reverse Proxy
+
+Configure CSP headers at your reverse proxy (nginx, Apache, Traefik):
+
+**nginx**:
+```nginx
+add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;" always;
+```
+
+**Apache**:
+```apache
+Header always set Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
+```
+
+**Pros**: Can update without Keycloak restart, centralized control
+**Cons**: Requires reverse proxy configuration access
+
+#### 3. Container Orchestration
+
+**Docker Compose**:
+```yaml
+environment:
+  KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
+  KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
+  KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
+```
+
+**Kubernetes ConfigMap**:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-csp
+data:
+  KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
+  KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
+  KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
+```
+
+**Pros**: Infrastructure as code, version controlled
+**Cons**: Requires container restart to change
+
+### Verifying CSP Configuration
+
+After configuring, verify CSP is active:
+
+**1. Check HTTP Response Headers**:
+
+```bash
+curl -I https://your-keycloak.com/realms/myrealm/protocol/openid-connect/auth | grep -i content-security-policy
+```
+
+Expected output:
+```
+content-security-policy: script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;
+```
+
+**2. Browser DevTools**:
+
+1. Open Keycloak login page
+2. Open DevTools (F12) → Console tab
+3. Look for CSP violations
+
+**Should NOT see**:
+```
+Refused to load the script 'https://challenges.cloudflare.com/...' because it violates the following Content Security Policy directive: "script-src 'self'"
+```
+
+**3. Network Tab**:
+
+1. Open DevTools (F12) → Network tab
+2. Reload login page
+3. Filter for `challenges.cloudflare.com`
+4. All requests should show status 200 (not blocked)
+
+### Common CSP Issues
+
+**Issue**: CSP headers not appearing
+
+**Causes**:
+- Environment variables not set correctly
+- Keycloak not restarted after config change
+- Reverse proxy overriding headers
+
+**Fix**:
+```bash
+# Verify environment variables
+printenv | grep KC_SPI_CONTENT_SECURITY_POLICY
+
+# Restart Keycloak
+systemctl restart keycloak
+# Or for Docker
+docker-compose restart keycloak
+```
+
+**Issue**: Widget blocked despite CSP configured
+
+**Causes**:
+- Multiple CSP headers conflicting
+- Strict CSP from reverse proxy
+- Browser extensions blocking
+
+**Fix**:
+- Check for multiple `Content-Security-Policy` headers
+- Ensure only one layer sets CSP (either Keycloak OR reverse proxy)
+- Test in incognito mode without extensions
+
+### Security Considerations
+
+**Nonce-based CSP (Advanced)**:
+
+For enhanced security, Cloudflare recommends using nonce-based CSP with `strict-dynamic`:
+
+```html
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" nonce="RANDOM_NONCE"></script>
+```
+
+With CSP:
+```
+script-src 'nonce-RANDOM_NONCE' 'strict-dynamic'
+```
+
+This approach eliminates the need to allowlist specific domains. However, it requires:
+- Generating a unique nonce per request
+- Injecting the nonce into FreeMarker templates
+- More complex Keycloak customization
+
+For most deployments, domain-based CSP (as shown above) provides sufficient security.
+
+### Full Example CSP
+
+For a production deployment with strict security:
+
+```
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' https://challenges.cloudflare.com;
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data:;
+  font-src 'self' data:;
+  frame-src 'self' https://challenges.cloudflare.com;
+  connect-src 'self' https://challenges.cloudflare.com;
+  frame-ancestors 'self';
+  base-uri 'self';
+  form-action 'self';
+```
+
+**Notes**:
+- `'unsafe-inline'` in `style-src` may be required for Keycloak themes
+- `data:` in `img-src` and `font-src` allows embedded images/fonts
+- `frame-ancestors 'self'` prevents clickjacking
+- Adjust based on your specific Keycloak theme requirements
+
+For detailed setup instructions, see [SETUP.md](SETUP.md#4-configure-content-security-policy).
 
 ## Authenticator Configuration
 
@@ -176,10 +374,10 @@ Visual theme of the Turnstile widget to match your login page design.
 
 **Type**: Multi-valued String
 **Required**: No
-**Default**: Empty
+**Default**: `10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8,::1/128,fc00::/7,fe80::/10` (private/internal ranges)
 **Format**: Comma-separated IPs or CIDR ranges
 
-List of IP addresses or CIDR ranges that should **skip Turnstile verification entirely**.
+List of IP addresses or CIDR ranges that should be **handled specially** during Turnstile verification. The exact behavior is controlled by the **Allowlist Behavior** setting.
 
 **Supported Formats**:
 - Single IPv4: `192.168.1.100`
@@ -213,20 +411,127 @@ Corporate VPN + office:
 **How it works**:
 1. User connects from IP address
 2. Authenticator checks if IP matches allowlist
-3. If match found: Skip Turnstile, allow authentication
-4. If no match: Show Turnstile widget
+3. **Turnstile widget is ALWAYS shown** (for UX consistency)
+4. Verification behavior is determined by **Allowlist Behavior** setting:
+   - **VERIFY_BUT_ALLOW** (default): Make Cloudflare API call, log result, but always allow access (audit mode)
+   - **SKIP_VERIFICATION**: Skip Cloudflare API call entirely (faster, saves API quota)
+5. If no match: Normal Turnstile verification
 
 **Use Cases**:
-- Skip verification for internal office networks
-- Trust known VPN ranges
-- Allow testing environments without Turnstile
-- Whitelist specific admin IPs
+- Audit verification attempts from internal networks (VERIFY_BUT_ALLOW)
+- Skip verification for trusted office networks (SKIP_VERIFICATION)
+- Trust known VPN ranges while maintaining logs
+- Allow testing environments without enforcing Turnstile
+- Monitor security posture of privileged IPs
 
 **Security Considerations**:
-- ⚠️ Allowlisted IPs bypass ALL Turnstile verification
+- ✅ Widget shown to all users maintains consistent UX
+- ✅ VERIFY_BUT_ALLOW mode provides audit trail while allowing access
+- ⚠️ SKIP_VERIFICATION mode bypasses all Cloudflare verification
 - Ensure IP ranges are under your control
 - Regularly audit allowlist entries
-- Consider using MFA for allowlisted IPs instead
+- Consider using MFA for additional security on allowlisted IPs
+
+### Allowlist Behavior
+
+**Type**: Dropdown
+**Required**: Yes
+**Options**: SKIP_VERIFICATION, VERIFY_BUT_ALLOW
+**Default**: VERIFY_BUT_ALLOW
+
+Controls how allowlisted IP addresses are handled during Turnstile verification. This setting works in conjunction with the **IP Allowlist** configuration.
+
+| Mode | Cloudflare API Call | Always Allow | Audit Trail | API Quota | Use Case |
+|------|-------------------|--------------|-------------|-----------|----------|
+| **VERIFY_BUT_ALLOW** ⭐ | ✅ Yes | ✅ Yes | ✅ Yes | Uses quota | Audit mode - track verification attempts |
+| **SKIP_VERIFICATION** | ❌ No | ✅ Yes | ⚠️ Limited | Saves quota | Performance mode - trust completely |
+
+#### VERIFY_BUT_ALLOW (Default - Recommended)
+
+**Behavior**:
+1. User from allowlisted IP sees Turnstile widget
+2. User completes challenge
+3. Server makes Cloudflare API verification call
+4. Server logs the verification result (success or failure)
+5. **User is allowed to proceed regardless of verification result**
+
+**Benefits**:
+- ✅ **Audit trail**: See if allowlisted IPs would pass/fail verification
+- ✅ **Security monitoring**: Detect compromised internal systems
+- ✅ **Compliance**: Maintain logs of all authentication attempts
+- ✅ **Gradual rollout**: Test verification before enforcing
+
+**Use Cases**:
+- Monitor security posture of internal networks
+- Detect compromised employee devices
+- Compliance requirements for audit logging
+- Testing Turnstile configuration before enforcing
+
+**Example Scenario**:
+```
+Office network: 192.168.1.0/24
+Behavior: VERIFY_BUT_ALLOW
+
+Employee at 192.168.1.100:
+1. Sees Turnstile widget (normal UX)
+2. Completes challenge
+3. Cloudflare returns: "FAIL - bot detected"
+4. Server logs: "192.168.1.100 - FAILED verification (but allowed due to allowlist)"
+5. User logs in successfully
+6. Security team reviews logs, discovers compromised device
+```
+
+**Logging**:
+```
+event_detail: cloudflare_turnstile_action=ip_allowlisted_verify_but_allow
+event_detail: cloudflare_turnstile_result=success (or failure details)
+event_detail: ip_address=192.168.1.100
+```
+
+#### SKIP_VERIFICATION
+
+**Behavior**:
+1. User from allowlisted IP sees Turnstile widget
+2. User completes challenge
+3. **Server skips Cloudflare API call entirely**
+4. User is allowed to proceed immediately
+
+**Benefits**:
+- ✅ **Faster authentication**: No API latency
+- ✅ **Saves API quota**: Reduces Cloudflare API calls
+- ✅ **Offline resilience**: Works even if Cloudflare is unreachable
+- ✅ **Predictable performance**: No dependency on external API
+
+**Use Cases**:
+- Fully trusted internal networks
+- Testing/staging environments
+- API quota conservation
+- Latency-sensitive applications
+
+**Example Scenario**:
+```
+Office network: 192.168.1.0/24
+Behavior: SKIP_VERIFICATION
+
+Employee at 192.168.1.100:
+1. Sees Turnstile widget (normal UX)
+2. Completes challenge
+3. Server immediately allows login (no API call)
+4. Minimal logging: "192.168.1.100 - allowlisted, skipped verification"
+```
+
+**Logging**:
+```
+event_detail: cloudflare_turnstile_result=ip_allowlisted_skip_verification
+event_detail: ip_address=192.168.1.100
+```
+
+**Trade-offs**:
+- ⚠️ No verification audit trail
+- ⚠️ Can't detect compromised allowlisted IPs
+- ⚠️ Fully trusts the network
+
+**Recommendation**: Use **VERIFY_BUT_ALLOW** for most deployments to maintain audit trails. Only use **SKIP_VERIFICATION** for fully trusted, isolated networks where audit logging is not required.
 
 ### IP Blocklist
 
@@ -738,6 +1043,94 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 3. **Monitor Failed Attempts**: High failure rates = possible attack
 4. **Use FAIL_CLOSED**: Don't allow bypass via API errors
 5. **Enable Recording**: Maintain audit trail for compliance
+
+### Audit and Compliance
+
+When **Record Verifications** is enabled, the provider maintains comprehensive audit trails in both the database and Keycloak events.
+
+#### What Gets Audited
+
+Every verification attempt records:
+- **Configuration Snapshot** - Active fail_mode, fail_action, allowlist_behavior, and implementation_method settings
+- **Decision Trail** - Whether IP was allowlisted/blocklisted, whether verification was skipped
+- **Final Outcome** - Whether authentication was allowed and why
+- **Full Context** - User, IP, timestamp, flow type (login vs registration)
+
+#### Configuration Context Tracking
+
+Each audit record captures the configuration active at the time:
+
+| Audit Field | Configuration Setting | Values |
+|-------------|----------------------|--------|
+| `fail_mode` | Error Handling Mode | FAIL_OPEN, FAIL_CLOSED |
+| `fail_action` | Verification Failure Action | BLOCK, ALLOW, REQUIRE_MFA |
+| `allowlist_behavior` | Allowlist Behavior | SKIP_VERIFICATION, VERIFY_BUT_ALLOW |
+| `implementation_method` | Implementation Method | SEPARATE_PAGE, SCRIPT_INJECTION, CUSTOM_THEME |
+
+This enables **historical analysis** - you can see how configuration changes affected outcomes over time.
+
+#### Audit Use Cases
+
+**Security Monitoring**:
+- Detect brute force attacks
+- Identify credential stuffing attempts
+- Monitor blocked access attempts
+- Track allowlist/blocklist effectiveness
+
+**Compliance Reporting**:
+- SOC 2 / ISO 27001 access control evidence
+- PCI DSS failed authentication tracking
+- GDPR data access requests
+- Configuration change audit trail
+
+**Configuration Analysis**:
+- Compare FAIL_OPEN vs FAIL_CLOSED impact during API errors
+- Evaluate BLOCK vs ALLOW vs REQUIRE_MFA effectiveness
+- Analyze SKIP_VERIFICATION vs VERIFY_BUT_ALLOW for allowlisted IPs
+- Measure verification success rates by flow type (login vs registration)
+
+#### Example Audit Queries
+
+**Find configuration changes over time**:
+```sql
+SELECT DISTINCT
+    DATE(timestamp) as date,
+    fail_mode,
+    fail_action,
+    allowlist_behavior,
+    COUNT(*) as checks_with_config
+FROM cloudflare_turnstile_check
+WHERE timestamp > NOW() - INTERVAL '30 DAYS'
+GROUP BY DATE(timestamp), fail_mode, fail_action, allowlist_behavior
+ORDER BY date DESC;
+```
+
+**Analyze decision outcomes**:
+```sql
+SELECT
+    action_reason,
+    authentication_allowed,
+    COUNT(*) as count
+FROM cloudflare_turnstile_check
+WHERE timestamp > NOW() - INTERVAL '7 DAYS'
+GROUP BY action_reason, authentication_allowed
+ORDER BY count DESC;
+```
+
+**Allowlist effectiveness**:
+```sql
+SELECT
+    allowlist_behavior,
+    COUNT(*) as total_checks,
+    SUM(CASE WHEN verification_skipped THEN 1 ELSE 0 END) as skipped,
+    SUM(CASE WHEN success = false THEN 1 ELSE 0 END) as would_have_failed
+FROM cloudflare_turnstile_check
+WHERE ip_allowlisted = true
+  AND timestamp > NOW() - INTERVAL '7 DAYS'
+GROUP BY allowlist_behavior;
+```
+
+For comprehensive audit guidance, query examples, and SIEM integration, see [AUDIT.md](AUDIT.md).
 
 ### Troubleshooting Tips
 
