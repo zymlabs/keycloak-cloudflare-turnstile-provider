@@ -8,7 +8,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import jakarta.persistence.EntityManager;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.Map;
@@ -394,5 +396,69 @@ public class CloudflareTurnstileHelper {
     public static int getReadTimeout(Map<String, String> config) {
         return Integer.parseInt(config.getOrDefault(
                 CloudflareTurnstileAuthenticator.CONFIG_READ_TIMEOUT, "5000"));
+    }
+
+    // ===== URL BUILDER METHODS =====
+
+    /**
+     * Gets the context path from UriInfo.
+     * Uses Keycloak's built-in URI handling which respects HostnameProvider configuration.
+     *
+     * @param uriInfo the UriInfo from the request context
+     * @return the context path (e.g., "/auth"), or empty string if root context
+     */
+    public static String getContextPath(UriInfo uriInfo) {
+        if (uriInfo == null) {
+            return "";
+        }
+        try {
+            URI baseUri = uriInfo.getBaseUri();
+            String path = baseUri.getPath();
+            // baseUri.getPath() returns "/" or "/auth/" - normalize to "" or "/auth"
+            if (path == null || path.isEmpty() || path.equals("/")) {
+                return "";
+            }
+            // Remove trailing slash
+            if (path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
+            }
+            return path;
+        } catch (Exception e) {
+            logger.debug("Could not determine context path from UriInfo", e);
+            return "";
+        }
+    }
+
+    /**
+     * Builds the URL for the Turnstile config.js endpoint.
+     *
+     * @param uriInfo the UriInfo from the request context
+     * @param realmName the realm name
+     * @param providerId the provider ID
+     * @param siteKey the Cloudflare site key
+     * @param widgetMode the widget mode (managed, non-interactive, invisible)
+     * @param widgetTheme the widget theme (light, dark, auto)
+     * @return the full URL path for config.js
+     */
+    public static String buildConfigJsUrl(UriInfo uriInfo, String realmName, String providerId,
+                                           String siteKey, String widgetMode, String widgetTheme) {
+        String contextPath = getContextPath(uriInfo);
+        return String.format("%s/realms/%s/%s/config.js?siteKey=%s&mode=%s&theme=%s",
+                contextPath, realmName, providerId,
+                urlEncode(siteKey), urlEncode(widgetMode), urlEncode(widgetTheme));
+    }
+
+    /**
+     * Builds the URL for the Turnstile injector JavaScript file.
+     *
+     * @param uriInfo the UriInfo from the request context
+     * @param realmName the realm name
+     * @param providerId the provider ID
+     * @return the full URL path for turnstile-injector.js
+     */
+    public static String buildInjectorJsUrl(UriInfo uriInfo, String realmName, String providerId) {
+        String contextPath = getContextPath(uriInfo);
+        return String.format("%s/realms/%s/%s/resources/js/turnstile-injector.js",
+                contextPath, realmName, providerId);
     }
 }

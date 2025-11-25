@@ -8,6 +8,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import jakarta.persistence.EntityManager;
+import jakarta.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
@@ -514,5 +516,150 @@ class CloudflareTurnstileHelperTest {
 
         assertThat(CloudflareTurnstileHelper.getReadTimeout(config))
                 .isEqualTo(5000);
+    }
+
+    // ===== URL BUILDER METHODS TESTS =====
+
+    @Test
+    @DisplayName("getContextPath should return empty string for null UriInfo")
+    void testGetContextPath_NullUriInfo() {
+        assertThat(CloudflareTurnstileHelper.getContextPath(null))
+                .isEqualTo("");
+    }
+
+    @Test
+    @DisplayName("getContextPath should return empty string for root path")
+    void testGetContextPath_RootPath() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/"));
+
+        assertThat(CloudflareTurnstileHelper.getContextPath(uriInfo))
+                .isEqualTo("");
+    }
+
+    @Test
+    @DisplayName("getContextPath should return context path with /auth prefix")
+    void testGetContextPath_AuthPrefix() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/auth/"));
+
+        assertThat(CloudflareTurnstileHelper.getContextPath(uriInfo))
+                .isEqualTo("/auth");
+    }
+
+    @Test
+    @DisplayName("getContextPath should handle custom context path")
+    void testGetContextPath_CustomPath() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/myapp/"));
+
+        assertThat(CloudflareTurnstileHelper.getContextPath(uriInfo))
+                .isEqualTo("/myapp");
+    }
+
+    @Test
+    @DisplayName("getContextPath should handle path without trailing slash")
+    void testGetContextPath_NoTrailingSlash() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/auth"));
+
+        assertThat(CloudflareTurnstileHelper.getContextPath(uriInfo))
+                .isEqualTo("/auth");
+    }
+
+    @Test
+    @DisplayName("getContextPath should handle exception gracefully")
+    void testGetContextPath_Exception() {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenThrow(new RuntimeException("URI error"));
+
+        assertThat(CloudflareTurnstileHelper.getContextPath(uriInfo))
+                .isEqualTo("");
+    }
+
+    @Test
+    @DisplayName("buildConfigJsUrl should build correct URL without context path")
+    void testBuildConfigJsUrl_NoContextPath() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/"));
+
+        String url = CloudflareTurnstileHelper.buildConfigJsUrl(
+                uriInfo, "myrealm", "cloudflare-turnstile", "sitekey123", "managed", "auto");
+
+        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto");
+    }
+
+    @Test
+    @DisplayName("buildConfigJsUrl should build correct URL with /auth context path")
+    void testBuildConfigJsUrl_WithAuthContext() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/auth/"));
+
+        String url = CloudflareTurnstileHelper.buildConfigJsUrl(
+                uriInfo, "myrealm", "cloudflare-turnstile", "sitekey123", "managed", "auto");
+
+        assertThat(url).isEqualTo("/auth/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto");
+    }
+
+    @Test
+    @DisplayName("buildConfigJsUrl should URL-encode special characters")
+    void testBuildConfigJsUrl_EncodesSpecialCharacters() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/"));
+
+        String url = CloudflareTurnstileHelper.buildConfigJsUrl(
+                uriInfo, "my-realm", "cloudflare-turnstile", "key with space", "managed", "auto");
+
+        assertThat(url).contains("siteKey=key+with+space");
+    }
+
+    @Test
+    @DisplayName("buildConfigJsUrl should handle null UriInfo")
+    void testBuildConfigJsUrl_NullUriInfo() {
+        String url = CloudflareTurnstileHelper.buildConfigJsUrl(
+                null, "myrealm", "cloudflare-turnstile", "sitekey123", "managed", "auto");
+
+        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto");
+    }
+
+    @Test
+    @DisplayName("buildInjectorJsUrl should build correct URL without context path")
+    void testBuildInjectorJsUrl_NoContextPath() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/"));
+
+        String url = CloudflareTurnstileHelper.buildInjectorJsUrl(uriInfo, "myrealm", "cloudflare-turnstile");
+
+        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js");
+    }
+
+    @Test
+    @DisplayName("buildInjectorJsUrl should build correct URL with /auth context path")
+    void testBuildInjectorJsUrl_WithAuthContext() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/auth/"));
+
+        String url = CloudflareTurnstileHelper.buildInjectorJsUrl(uriInfo, "myrealm", "cloudflare-turnstile");
+
+        assertThat(url).isEqualTo("/auth/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js");
+    }
+
+    @Test
+    @DisplayName("buildInjectorJsUrl should handle null UriInfo")
+    void testBuildInjectorJsUrl_NullUriInfo() {
+        String url = CloudflareTurnstileHelper.buildInjectorJsUrl(null, "myrealm", "cloudflare-turnstile");
+
+        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js");
+    }
+
+    @Test
+    @DisplayName("buildInjectorJsUrl should handle custom context path")
+    void testBuildInjectorJsUrl_CustomContextPath() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/keycloak/"));
+
+        String url = CloudflareTurnstileHelper.buildInjectorJsUrl(uriInfo, "myrealm", "cloudflare-turnstile");
+
+        assertThat(url).isEqualTo("/keycloak/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js");
     }
 }

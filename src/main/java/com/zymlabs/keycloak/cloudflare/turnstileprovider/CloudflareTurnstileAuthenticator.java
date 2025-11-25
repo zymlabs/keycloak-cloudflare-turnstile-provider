@@ -192,12 +192,10 @@ public class CloudflareTurnstileAuthenticator extends org.keycloak.authenticatio
             String realmName = context.getRealm().getName();
             String providerId = CloudflareTurnstileResourceProviderFactory.PROVIDER_ID;
 
-            String configPath = String.format("/realms/%s/%s/config.js?siteKey=%s&mode=%s&theme=%s",
-                    realmName, providerId,
-                    CloudflareTurnstileHelper.urlEncode(siteKey), CloudflareTurnstileHelper.urlEncode(widgetMode), CloudflareTurnstileHelper.urlEncode(widgetTheme));
-
-            String injectorPath = String.format("/realms/%s/%s/resources/js/turnstile-injector.js",
-                    realmName, providerId);
+            String configPath = CloudflareTurnstileHelper.buildConfigJsUrl(
+                    context.getUriInfo(), realmName, providerId, siteKey, widgetMode, widgetTheme);
+            String injectorPath = CloudflareTurnstileHelper.buildInjectorJsUrl(
+                    context.getUriInfo(), realmName, providerId);
 
             form.addScript(configPath);
             form.addScript(injectorPath);
@@ -250,14 +248,11 @@ public class CloudflareTurnstileAuthenticator extends org.keycloak.authenticatio
         String realmName = context.getRealm().getName();
         String providerId = CloudflareTurnstileResourceProviderFactory.PROVIDER_ID;
 
-        // Add config script with query parameters
-        String configPath = String.format("/realms/%s/%s/config.js?siteKey=%s&mode=%s&theme=%s",
-                realmName, providerId,
-                CloudflareTurnstileHelper.urlEncode(siteKey), CloudflareTurnstileHelper.urlEncode(widgetMode), CloudflareTurnstileHelper.urlEncode(widgetTheme));
-
-        // Add the injector script
-        String injectorPath = String.format("/realms/%s/%s/resources/js/turnstile-injector.js",
-                realmName, providerId);
+        // Build URLs using helper methods (handles context path automatically via UriInfo)
+        String configPath = CloudflareTurnstileHelper.buildConfigJsUrl(
+                context.getUriInfo(), realmName, providerId, siteKey, widgetMode, widgetTheme);
+        String injectorPath = CloudflareTurnstileHelper.buildInjectorJsUrl(
+                context.getUriInfo(), realmName, providerId);
 
         var formProvider = context.form()
                 .setAttribute("turnstileRequired", true)

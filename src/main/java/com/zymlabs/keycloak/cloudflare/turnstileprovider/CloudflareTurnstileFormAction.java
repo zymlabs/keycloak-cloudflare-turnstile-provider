@@ -145,16 +145,13 @@ public class CloudflareTurnstileFormAction implements FormAction {
         String realmName = context.getRealm().getName();
         String providerId = CloudflareTurnstileResourceProviderFactory.PROVIDER_ID;
 
-        // Step 1: Add config script with query parameters
-        // This sets window.TURNSTILE_CONFIG for the injector to read
-        String configPath = String.format("/realms/%s/%s/config.js?siteKey=%s&mode=%s&theme=%s",
-                realmName, providerId,
-                CloudflareTurnstileHelper.urlEncode(siteKey), CloudflareTurnstileHelper.urlEncode(widgetMode), CloudflareTurnstileHelper.urlEncode(widgetTheme));
+        // Build URLs using helper methods (handles context path automatically via UriInfo)
+        String configPath = CloudflareTurnstileHelper.buildConfigJsUrl(
+                context.getUriInfo(), realmName, providerId, siteKey, widgetMode, widgetTheme);
         form.addScript(configPath);
 
-        // Step 2: Add the injector script that will read the config and inject the widget
-        String injectorPath = String.format("/realms/%s/%s/resources/js/turnstile-injector.js",
-                realmName, providerId);
+        String injectorPath = CloudflareTurnstileHelper.buildInjectorJsUrl(
+                context.getUriInfo(), realmName, providerId);
         form.addScript(injectorPath);
 
         logger.debugf("Script injection mode configured for %s flow: siteKey=%s, mode=%s, theme=%s",
