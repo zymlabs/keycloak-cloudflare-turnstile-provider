@@ -79,6 +79,10 @@
                                      data-size="invisible"
                                      <#else>
                                      data-size="flexible"
+                                     data-callback="onTurnstileSuccess"
+                                     data-error-callback="onTurnstileError"
+                                     data-expired-callback="onTurnstileExpired"
+                                     data-timeout-callback="onTurnstileTimeout"
                                      </#if>
                                      <#if turnstileMode == 'non-interactive'>
                                      data-appearance="interaction-only"
@@ -88,6 +92,48 @@
                             </div>
                         </div>
                         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                        <#if turnstileMode != 'invisible'>
+                        <script>
+                            // Helper to find submit button with fallbacks
+                            function findSubmitButton() {
+                                var form = document.querySelector('form#kc-form-login, form#kc-register-form, form#kc-turnstile-form');
+                                if (!form) return null;
+                                return form.querySelector('input[type="submit"]') ||
+                                       form.querySelector('button[type="submit"]') ||
+                                       form.querySelector('button[name="login"]') ||
+                                       form.querySelector('.btn-primary') ||
+                                       form.querySelector('button.pf-c-button');
+                            }
+
+                            function setSubmitButtonState(disabled) {
+                                var submitBtn = findSubmitButton();
+                                if (submitBtn) {
+                                    submitBtn.disabled = disabled;
+                                }
+                            }
+
+                            // Disable submit button initially
+                            document.addEventListener('DOMContentLoaded', function() {
+                                setSubmitButtonState(true);
+                            });
+
+                            function onTurnstileSuccess(token) {
+                                setSubmitButtonState(false);
+                            }
+
+                            function onTurnstileError(errorCode) {
+                                setSubmitButtonState(true);
+                            }
+
+                            function onTurnstileExpired() {
+                                setSubmitButtonState(true);
+                            }
+
+                            function onTurnstileTimeout() {
+                                setSubmitButtonState(true);
+                            }
+                        </script>
+                        </#if>
                     </#if>
 
                     <#-- Hidden credential ID field -->

@@ -113,6 +113,44 @@
     }
 
     /**
+     * Set up global callback functions for Turnstile widget
+     * These enable/disable the submit button based on widget state
+     */
+    function setupTurnstileCallbacks(form) {
+        // Helper to set submit button state
+        function setSubmitButtonState(disabled) {
+            var submitBtn = findSubmitButton(form);
+            if (submitBtn) {
+                submitBtn.disabled = disabled;
+                logger.log('[Turnstile] Submit button ' + (disabled ? 'disabled' : 'enabled'));
+            }
+        }
+
+        // Global callbacks for Turnstile widget
+        window.onTurnstileSuccess = function(token) {
+            logger.log('[Turnstile] Verification successful');
+            setSubmitButtonState(false);
+        };
+
+        window.onTurnstileError = function(errorCode) {
+            logger.warn('[Turnstile] Error:', errorCode);
+            setSubmitButtonState(true);
+        };
+
+        window.onTurnstileExpired = function() {
+            logger.log('[Turnstile] Token expired');
+            setSubmitButtonState(true);
+        };
+
+        window.onTurnstileTimeout = function() {
+            logger.warn('[Turnstile] Challenge timed out');
+            setSubmitButtonState(true);
+        };
+
+        logger.log('[Turnstile] Callbacks registered');
+    }
+
+    /**
      * Extract Turnstile configuration from hidden fields
      */
     function getTurnstileConfig(form) {
@@ -181,6 +219,23 @@
         widgetDiv.setAttribute('data-theme', config.theme);
         widgetDiv.setAttribute('data-size', size);
         widgetDiv.setAttribute('data-appearance', appearance);
+
+        // For non-invisible modes, add callbacks and disable submit button
+        if (config.mode !== 'invisible') {
+            widgetDiv.setAttribute('data-callback', 'onTurnstileSuccess');
+            widgetDiv.setAttribute('data-error-callback', 'onTurnstileError');
+            widgetDiv.setAttribute('data-expired-callback', 'onTurnstileExpired');
+            widgetDiv.setAttribute('data-timeout-callback', 'onTurnstileTimeout');
+
+            // Disable submit button until Turnstile completes
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                logger.log('[Turnstile] Submit button disabled until verification completes');
+            }
+
+            // Set up global callback functions
+            setupTurnstileCallbacks(form);
+        }
 
         // Insert before the submit button's parent form group to avoid nesting
         // Works with PatternFly 3, 4, and 5 (Keycloak 18+)

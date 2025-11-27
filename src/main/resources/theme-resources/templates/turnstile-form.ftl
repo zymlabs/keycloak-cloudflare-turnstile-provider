@@ -20,6 +20,10 @@
                          data-callback="onTurnstileSuccess"
                          <#else>
                          data-size="flexible"
+                         data-callback="onTurnstileSuccess"
+                         data-error-callback="onTurnstileError"
+                         data-expired-callback="onTurnstileExpired"
+                         data-timeout-callback="onTurnstileTimeout"
                          </#if>
                          <#if turnstileMode == 'non-interactive'>
                          data-appearance="interaction-only"
@@ -34,7 +38,8 @@
                         <button type="submit"
                                 class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
                                 name="login"
-                                id="kc-login">
+                                id="kc-login"
+                                <#if turnstileMode != 'invisible'>disabled</#if>>
                             ${msg("doLogIn")}
                         </button>
                     </div>
@@ -45,11 +50,32 @@
 
                 <#-- Form submission handler -->
                 <script>
+                    // Helper to find submit button with fallbacks
+                    function findSubmitButton() {
+                        var form = document.querySelector('form#kc-form-login, form#kc-register-form, form#kc-turnstile-form');
+                        if (!form) return null;
+                        return form.querySelector('input[type="submit"]') ||
+                               form.querySelector('button[type="submit"]') ||
+                               form.querySelector('button[name="login"]') ||
+                               form.querySelector('.btn-primary') ||
+                               form.querySelector('button.pf-c-button');
+                    }
+
+                    function setSubmitButtonState(disabled) {
+                        var submitBtn = findSubmitButton();
+                        if (submitBtn) {
+                            submitBtn.disabled = disabled;
+                            <#if enableDebugLogging!false>
+                            console.log('[Turnstile] Submit button ' + (disabled ? 'disabled' : 'enabled'));
+                            </#if>
+                        }
+                    }
+
                     <#if turnstileMode == 'invisible'>
                     // Invisible mode: callback function for auto-submit
                     function onTurnstileSuccess(token) {
                         <#if enableDebugLogging!false>
-                        console.log('Turnstile verification successful (invisible mode)');
+                        console.log('[Turnstile] Verification successful (invisible mode)');
                         </#if>
                         document.getElementById('turnstile-response').value = token;
                         document.getElementById('kc-turnstile-form').submit();
@@ -61,33 +87,44 @@
                         loginButton.addEventListener('click', function(e) {
                             e.preventDefault();
                             <#if enableDebugLogging!false>
-                            console.log('Triggering invisible Turnstile challenge...');
+                            console.log('[Turnstile] Triggering invisible challenge...');
                             </#if>
                             // The invisible widget will automatically trigger and call onTurnstileSuccess
                             turnstile.execute(document.getElementById('turnstile-widget'));
                         });
                     });
                     <#else>
-                    // Managed and Non-interactive modes: copy token on form submit
-                    document.addEventListener('DOMContentLoaded', function() {
-                        document.getElementById('kc-turnstile-form').addEventListener('submit', function(e) {
-                            // Get the Turnstile response token from the widget
-                            var widgetContainer = document.querySelector('.cf-turnstile');
-                            if (widgetContainer) {
-                                var tokenInput = widgetContainer.querySelector('input[name="cf-turnstile-response"]');
-                                if (tokenInput && tokenInput.value) {
-                                    <#if enableDebugLogging!false>
-                                    console.log('Turnstile token found, copying to form');
-                                    </#if>
-                                    document.getElementById('turnstile-response').value = tokenInput.value;
-                                } else {
-                                    <#if enableDebugLogging!false>
-                                    console.warn('Turnstile token not found - verification may fail');
-                                    </#if>
-                                }
-                            }
-                        });
-                    });
+                    // Managed and Non-interactive modes: callbacks to enable/disable submit button
+                    function onTurnstileSuccess(token) {
+                        <#if enableDebugLogging!false>
+                        console.log('[Turnstile] Verification successful');
+                        </#if>
+                        // Copy token to hidden form field
+                        document.getElementById('turnstile-response').value = token;
+                        // Enable submit button
+                        setSubmitButtonState(false);
+                    }
+
+                    function onTurnstileError(errorCode) {
+                        <#if enableDebugLogging!false>
+                        console.warn('[Turnstile] Error:', errorCode);
+                        </#if>
+                        setSubmitButtonState(true);
+                    }
+
+                    function onTurnstileExpired() {
+                        <#if enableDebugLogging!false>
+                        console.log('[Turnstile] Token expired');
+                        </#if>
+                        setSubmitButtonState(true);
+                    }
+
+                    function onTurnstileTimeout() {
+                        <#if enableDebugLogging!false>
+                        console.warn('[Turnstile] Challenge timed out');
+                        </#if>
+                        setSubmitButtonState(true);
+                    }
                     </#if>
                 </script>
             </div>
