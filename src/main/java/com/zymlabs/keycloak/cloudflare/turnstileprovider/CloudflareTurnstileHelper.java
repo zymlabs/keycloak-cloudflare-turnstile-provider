@@ -442,10 +442,29 @@ public class CloudflareTurnstileHelper {
      */
     public static String buildConfigJsUrl(UriInfo uriInfo, String realmName, String providerId,
                                            String siteKey, String widgetMode, String widgetTheme) {
+        return buildConfigJsUrl(uriInfo, realmName, providerId, siteKey, widgetMode, widgetTheme, false);
+    }
+
+    /**
+     * Builds the URL for the Turnstile config.js endpoint with debug logging option.
+     *
+     * @param uriInfo the UriInfo from the request context
+     * @param realmName the realm name
+     * @param providerId the provider ID
+     * @param siteKey the Cloudflare site key
+     * @param widgetMode the widget mode (managed, non-interactive, invisible)
+     * @param widgetTheme the widget theme (light, dark, auto)
+     * @param enableDebugLogging whether to enable JavaScript console debug logging
+     * @return the full URL path for config.js
+     */
+    public static String buildConfigJsUrl(UriInfo uriInfo, String realmName, String providerId,
+                                           String siteKey, String widgetMode, String widgetTheme,
+                                           boolean enableDebugLogging) {
         String contextPath = getContextPath(uriInfo);
-        return String.format("%s/realms/%s/%s/config.js?siteKey=%s&mode=%s&theme=%s",
+        return String.format("%s/realms/%s/%s/config.js?siteKey=%s&mode=%s&theme=%s&debug=%s",
                 contextPath, realmName, providerId,
-                urlEncode(siteKey), urlEncode(widgetMode), urlEncode(widgetTheme));
+                urlEncode(siteKey), urlEncode(widgetMode), urlEncode(widgetTheme),
+                enableDebugLogging ? "true" : "false");
     }
 
     /**

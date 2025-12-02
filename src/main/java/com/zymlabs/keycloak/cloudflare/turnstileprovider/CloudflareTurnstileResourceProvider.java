@@ -72,11 +72,12 @@ public class CloudflareTurnstileResourceProvider implements RealmResourceProvide
     /**
      * Serves dynamically generated Turnstile configuration script.
      *
-     * GET /realms/{realm}/cloudflare-turnstile/config.js?siteKey=xxx&mode=managed&theme=auto
+     * GET /realms/{realm}/cloudflare-turnstile/config.js?siteKey=xxx&mode=managed&theme=auto&debug=false
      *
      * @param siteKey Cloudflare Turnstile site key
      * @param mode Widget mode (managed, non-interactive, invisible)
      * @param theme Widget theme (light, dark, auto)
+     * @param debug Enable JavaScript console debug logging
      * @return Response with JavaScript that sets global config variables
      */
     @GET
@@ -85,10 +86,11 @@ public class CloudflareTurnstileResourceProvider implements RealmResourceProvide
     public Response getTurnstileConfig(
             @QueryParam("siteKey") String siteKey,
             @QueryParam("mode") String mode,
-            @QueryParam("theme") String theme) {
+            @QueryParam("theme") String theme,
+            @QueryParam("debug") String debug) {
 
-        logger.debugf("Serving Turnstile config: siteKey=%s, mode=%s, theme=%s",
-                     siteKey != null ? "***" : "null", mode, theme);
+        logger.debugf("Serving Turnstile config: siteKey=%s, mode=%s, theme=%s, debug=%s",
+                     siteKey != null ? "***" : "null", mode, theme, debug);
 
         // Validate required parameters
         if (siteKey == null || siteKey.trim().isEmpty()) {
@@ -102,16 +104,19 @@ public class CloudflareTurnstileResourceProvider implements RealmResourceProvide
         // Use defaults if not specified
         String widgetMode = (mode != null && !mode.trim().isEmpty()) ? mode : "managed";
         String widgetTheme = (theme != null && !theme.trim().isEmpty()) ? theme : "auto";
+        boolean enableDebugLogging = "true".equalsIgnoreCase(debug);
 
         // Generate JavaScript that sets global variables
         String configScript = String.format(
                 "// Cloudflare Turnstile Configuration (Auto-generated)\n" +
+                "window.TURNSTILE_DEBUG_LOGGING = %s;\n" +
                 "window.TURNSTILE_CONFIG = window.TURNSTILE_CONFIG || {};\n" +
                 "window.TURNSTILE_CONFIG.enabled = true;\n" +
                 "window.TURNSTILE_CONFIG.siteKey = %s;\n" +
                 "window.TURNSTILE_CONFIG.mode = %s;\n" +
                 "window.TURNSTILE_CONFIG.theme = %s;\n" +
-                "console.log('[Turnstile Config] Configuration loaded:', window.TURNSTILE_CONFIG);\n",
+                (enableDebugLogging ? "console.log('[Turnstile Config] Configuration loaded:', window.TURNSTILE_CONFIG);\n" : ""),
+                enableDebugLogging ? "true" : "false",
                 escapeJavaScriptString(siteKey),
                 escapeJavaScriptString(widgetMode),
                 escapeJavaScriptString(widgetTheme)

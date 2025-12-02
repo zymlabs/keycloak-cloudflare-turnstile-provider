@@ -206,6 +206,20 @@
 
         logger.log('[Turnstile] Injecting widget for auto-rendering');
 
+        // For non-invisible modes, setup callbacks and disable button BEFORE creating widget
+        // This prevents a race condition where the Turnstile API (if cached) could complete
+        // before our callbacks are registered
+        if (config.mode !== 'invisible') {
+            // Set up global callback functions FIRST (before widget can call them)
+            setupTurnstileCallbacks(form);
+
+            // Disable submit button until Turnstile completes
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                logger.log('[Turnstile] Submit button disabled until verification completes');
+            }
+        }
+
         // Determine widget size and appearance
         var size = config.mode === 'invisible' ? 'invisible' : 'flexible';
         var appearance = config.mode === 'non-interactive' ? 'interaction-only' : 'always';
@@ -220,21 +234,12 @@
         widgetDiv.setAttribute('data-size', size);
         widgetDiv.setAttribute('data-appearance', appearance);
 
-        // For non-invisible modes, add callbacks and disable submit button
+        // Add callback attributes to widget (callbacks are already registered above)
         if (config.mode !== 'invisible') {
             widgetDiv.setAttribute('data-callback', 'onTurnstileSuccess');
             widgetDiv.setAttribute('data-error-callback', 'onTurnstileError');
             widgetDiv.setAttribute('data-expired-callback', 'onTurnstileExpired');
             widgetDiv.setAttribute('data-timeout-callback', 'onTurnstileTimeout');
-
-            // Disable submit button until Turnstile completes
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                logger.log('[Turnstile] Submit button disabled until verification completes');
-            }
-
-            // Set up global callback functions
-            setupTurnstileCallbacks(form);
         }
 
         // Insert before the submit button's parent form group to avoid nesting

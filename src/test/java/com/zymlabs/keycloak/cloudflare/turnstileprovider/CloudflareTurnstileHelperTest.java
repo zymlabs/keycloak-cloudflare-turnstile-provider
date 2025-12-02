@@ -586,7 +586,7 @@ class CloudflareTurnstileHelperTest {
         String url = CloudflareTurnstileHelper.buildConfigJsUrl(
                 uriInfo, "myrealm", "cloudflare-turnstile", "sitekey123", "managed", "auto");
 
-        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto");
+        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto&debug=false");
     }
 
     @Test
@@ -598,7 +598,7 @@ class CloudflareTurnstileHelperTest {
         String url = CloudflareTurnstileHelper.buildConfigJsUrl(
                 uriInfo, "myrealm", "cloudflare-turnstile", "sitekey123", "managed", "auto");
 
-        assertThat(url).isEqualTo("/auth/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto");
+        assertThat(url).isEqualTo("/auth/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto&debug=false");
     }
 
     @Test
@@ -619,7 +619,31 @@ class CloudflareTurnstileHelperTest {
         String url = CloudflareTurnstileHelper.buildConfigJsUrl(
                 null, "myrealm", "cloudflare-turnstile", "sitekey123", "managed", "auto");
 
-        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto");
+        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto&debug=false");
+    }
+
+    @Test
+    @DisplayName("buildConfigJsUrl should include debug=true when enableDebugLogging is true")
+    void testBuildConfigJsUrl_WithDebugLoggingEnabled() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/"));
+
+        String url = CloudflareTurnstileHelper.buildConfigJsUrl(
+                uriInfo, "myrealm", "cloudflare-turnstile", "sitekey123", "managed", "auto", true);
+
+        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto&debug=true");
+    }
+
+    @Test
+    @DisplayName("buildConfigJsUrl should include debug=false when enableDebugLogging is false")
+    void testBuildConfigJsUrl_WithDebugLoggingDisabled() throws Exception {
+        UriInfo uriInfo = mock(UriInfo.class);
+        when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost:8080/"));
+
+        String url = CloudflareTurnstileHelper.buildConfigJsUrl(
+                uriInfo, "myrealm", "cloudflare-turnstile", "sitekey123", "managed", "auto", false);
+
+        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/config.js?siteKey=sitekey123&mode=managed&theme=auto&debug=false");
     }
 
     @Test

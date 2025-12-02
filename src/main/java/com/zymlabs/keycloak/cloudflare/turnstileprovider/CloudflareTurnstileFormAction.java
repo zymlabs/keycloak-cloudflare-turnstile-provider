@@ -105,10 +105,12 @@ public class CloudflareTurnstileFormAction implements FormAction {
         String widgetMode = configMap.getOrDefault(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_MODE, "managed");
         String widgetTheme = configMap.getOrDefault(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_THEME, "auto");
         String implementationMethod = configMap.getOrDefault(CONFIG_IMPLEMENTATION_METHOD, METHOD_SCRIPT_INJECTION);
+        boolean enableDebugLogging = Boolean.parseBoolean(
+                configMap.getOrDefault(CloudflareTurnstileAuthenticator.CONFIG_ENABLE_DEBUG_LOGGING, "false"));
 
-        logger.debugf("Configuration: siteKey=%s, mode=%s, theme=%s, method=%s",
+        logger.debugf("Configuration: siteKey=%s, mode=%s, theme=%s, method=%s, debug=%s",
                     siteKey != null ? siteKey.substring(0, Math.min(10, siteKey.length())) + "..." : "null",
-                    widgetMode, widgetTheme, implementationMethod);
+                    widgetMode, widgetTheme, implementationMethod, enableDebugLogging);
 
         // Set common attributes
         form.setAttribute("turnstileRequired", true);
@@ -116,6 +118,7 @@ public class CloudflareTurnstileFormAction implements FormAction {
         form.setAttribute("turnstileMode", widgetMode);
         form.setAttribute("turnstileTheme", widgetTheme);
         form.setAttribute("turnstileSkipped", false);
+        form.setAttribute("enableDebugLogging", enableDebugLogging);
 
         logger.debugf("Rendering Turnstile widget using %s method for registration flow", implementationMethod);
 
@@ -123,7 +126,7 @@ public class CloudflareTurnstileFormAction implements FormAction {
         switch (implementationMethod) {
             case METHOD_SCRIPT_INJECTION:
                 logger.debug("Calling buildPageScriptInjection()");
-                buildPageScriptInjection(form, context, siteKey, widgetMode, widgetTheme, isRegistrationFlow);
+                buildPageScriptInjection(form, context, siteKey, widgetMode, widgetTheme, enableDebugLogging, isRegistrationFlow);
                 break;
             case METHOD_CUSTOM_THEME:
                 logger.debug("Calling buildPageCustomTheme()");
@@ -131,14 +134,15 @@ public class CloudflareTurnstileFormAction implements FormAction {
                 break;
             default:
                 logger.debugf("Unknown implementation method: %s, defaulting to Script Injection", implementationMethod);
-                buildPageScriptInjection(form, context, siteKey, widgetMode, widgetTheme, isRegistrationFlow);
+                buildPageScriptInjection(form, context, siteKey, widgetMode, widgetTheme, enableDebugLogging, isRegistrationFlow);
         }
 
         logger.debug("buildPage() completed successfully");
     }
 
     private void buildPageScriptInjection(LoginFormsProvider form, FormContext context, String siteKey,
-                                          String widgetMode, String widgetTheme, boolean isRegistrationFlow) {
+                                          String widgetMode, String widgetTheme, boolean enableDebugLogging,
+                                          boolean isRegistrationFlow) {
         // Script injection approach: Load configuration via dynamic script, then load the injector
         // The injector will read window.TURNSTILE_CONFIG and inject the widget via DOM manipulation
 
@@ -147,15 +151,15 @@ public class CloudflareTurnstileFormAction implements FormAction {
 
         // Build URLs using helper methods (handles context path automatically via UriInfo)
         String configPath = CloudflareTurnstileHelper.buildConfigJsUrl(
-                context.getUriInfo(), realmName, providerId, siteKey, widgetMode, widgetTheme);
+                context.getUriInfo(), realmName, providerId, siteKey, widgetMode, widgetTheme, enableDebugLogging);
         form.addScript(configPath);
 
         String injectorPath = CloudflareTurnstileHelper.buildInjectorJsUrl(
                 context.getUriInfo(), realmName, providerId);
         form.addScript(injectorPath);
 
-        logger.debugf("Script injection mode configured for %s flow: siteKey=%s, mode=%s, theme=%s",
-                     isRegistrationFlow ? "registration" : "login", siteKey, widgetMode, widgetTheme);
+        logger.debugf("Script injection mode configured for %s flow: siteKey=%s, mode=%s, theme=%s, debug=%s",
+                     isRegistrationFlow ? "registration" : "login", siteKey, widgetMode, widgetTheme, enableDebugLogging);
     }
 
     private void buildPageCustomTheme(LoginFormsProvider form) {

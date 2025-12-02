@@ -193,7 +193,7 @@ public class CloudflareTurnstileAuthenticator extends org.keycloak.authenticatio
             String providerId = CloudflareTurnstileResourceProviderFactory.PROVIDER_ID;
 
             String configPath = CloudflareTurnstileHelper.buildConfigJsUrl(
-                    context.getUriInfo(), realmName, providerId, siteKey, widgetMode, widgetTheme);
+                    context.getUriInfo(), realmName, providerId, siteKey, widgetMode, widgetTheme, enableDebugLogging);
             String injectorPath = CloudflareTurnstileHelper.buildInjectorJsUrl(
                     context.getUriInfo(), realmName, providerId);
 
@@ -250,7 +250,7 @@ public class CloudflareTurnstileAuthenticator extends org.keycloak.authenticatio
 
         // Build URLs using helper methods (handles context path automatically via UriInfo)
         String configPath = CloudflareTurnstileHelper.buildConfigJsUrl(
-                context.getUriInfo(), realmName, providerId, siteKey, widgetMode, widgetTheme);
+                context.getUriInfo(), realmName, providerId, siteKey, widgetMode, widgetTheme, enableDebugLogging);
         String injectorPath = CloudflareTurnstileHelper.buildInjectorJsUrl(
                 context.getUriInfo(), realmName, providerId);
 
