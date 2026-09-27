@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.regex.Pattern;
 
 /**
  * Utility class for IP address and CIDR range matching.
@@ -14,6 +15,28 @@ import java.net.UnknownHostException;
 public class IpAddressUtils {
 
     private static final Logger logger = Logger.getLogger(IpAddressUtils.class);
+
+    private static final Pattern IPV4_LITERAL = Pattern.compile(
+            "^((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)$");
+    // Hex groups and colons, optionally an embedded IPv4 tail and a zone id. getByName does the
+    // full validation; this only guarantees the value can't be treated as a hostname.
+    private static final Pattern IPV6_LITERAL = Pattern.compile("^[0-9A-Fa-f:.]*:[0-9A-Fa-f:.]*(%[0-9A-Za-z_.\\-]+)?$");
+
+    /**
+     * Parses an IPv4/IPv6 literal without ever performing a DNS lookup.
+     *
+     * <p>{@link InetAddress#getByName(String)} resolves anything that isn't a literal through DNS.
+     * Accepting hostnames would let whoever controls (or spoofs) a DNS record decide which clients
+     * are allowlisted, and would put blocking DNS lookups on the login path.
+     *
+     * @throws UnknownHostException if the value is not an IP literal
+     */
+    static InetAddress parseLiteral(String value) throws UnknownHostException {
+        if (value == null || !(IPV4_LITERAL.matcher(value).matches() || IPV6_LITERAL.matcher(value).matches())) {
+            throw new UnknownHostException("Not an IP address literal: " + value);
+        }
+        return InetAddress.getByName(value);
+    }
 
     /**
      * Check if an IP address matches any entry in a comma-separated list of IPs/CIDRs.
@@ -33,7 +56,7 @@ public class IpAddressUtils {
         }
 
         try {
-            InetAddress ip = InetAddress.getByName(ipAddress);
+            InetAddress ip = parseLiteral(ipAddress);
 
             for (String entry : ipList.split(",")) {
                 entry = entry.trim();
@@ -50,7 +73,7 @@ public class IpAddressUtils {
                         }
                     } else {
                         // Single IP
-                        InetAddress entryIp = InetAddress.getByName(entry);
+                        InetAddress entryIp = parseLiteral(entry);
                         if (ip.equals(entryIp)) {
                             logger.debugf("IP %s matched single IP entry: %s", ipAddress, entry);
                             return true;
@@ -86,7 +109,7 @@ public class IpAddressUtils {
             throw new IllegalArgumentException("Invalid CIDR format: " + cidr);
         }
 
-        InetAddress network = InetAddress.getByName(parts[0]);
+        InetAddress network = parseLiteral(parts[0]);
         int prefixLength = Integer.parseInt(parts[1]);
 
         byte[] ipBytes = ip.getAddress();
@@ -149,7 +172,7 @@ public class IpAddressUtils {
                         continue;
                     }
 
-                    InetAddress network = InetAddress.getByName(parts[0]);
+                    InetAddress network = parseLiteral(parts[0]);
                     int prefixLength = Integer.parseInt(parts[1]);
                     int maxPrefixLength = network.getAddress().length * 8;
 
@@ -160,7 +183,7 @@ public class IpAddressUtils {
                     }
                 } else {
                     // Single IP - just validate format
-                    InetAddress.getByName(entry);
+                    parseLiteral(entry);
                 }
             } catch (UnknownHostException e) {
                 errors.append(String.format("Invalid IP/CIDR '%s'; ", entry));
