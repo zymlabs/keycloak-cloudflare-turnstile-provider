@@ -1,0 +1,488 @@
+{
+  "realm": "turnstile-e2e",
+  "enabled": true,
+  "sslRequired": "none",
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "referrerPolicy": "no-referrer",
+    "xRobotsTag": "none",
+    "xFrameOptions": "SAMEORIGIN",
+    "contentSecurityPolicy": "frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com;",
+    "xXSSProtection": "1; mode=block",
+    "strictTransportSecurity": "max-age=31536000; includeSubDomains"
+  },
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "eventsEnabled": true,
+  "eventsExpiration": 3600,
+  "registrationFlow": "e2e-registration",
+  "browserFlow": "e2e-browser-script-injection",
+  "authenticationFlows": [
+    {
+      "alias": "e2e-browser-script-injection",
+      "description": "E2E browser flow: script-injection",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-script-injection-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-script-injection-forms",
+      "description": "E2E forms: script-injection",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-script-injection"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-custom-theme",
+      "description": "E2E browser flow: custom-theme",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-custom-theme-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-custom-theme-forms",
+      "description": "E2E forms: custom-theme",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-custom-theme"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-server-reject",
+      "description": "E2E browser flow: server-reject",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-server-reject-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-server-reject-forms",
+      "description": "E2E forms: server-reject",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-server-reject"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-ip-blocked",
+      "description": "E2E browser flow: ip-blocked",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-ip-blocked-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-ip-blocked-forms",
+      "description": "E2E forms: ip-blocked",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-ip-blocked"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-separate-page",
+      "description": "E2E browser flow: separate-page",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-separate-page-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-separate-page-forms",
+      "description": "E2E forms: separate-page",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-separate-page"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-username-password-form"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-registration",
+      "description": "E2E registration flow",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-registration-form",
+          "authenticator": "registration-page-form"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-registration-form",
+      "description": "E2E registration form",
+      "providerId": "form-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-form-action",
+          "authenticatorConfig": "e2e-registration"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "registration-user-creation"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "registration-password-action"
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "e2e-script-injection",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-separate-page",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SEPARATE_PAGE",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-custom-theme",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "CUSTOM_THEME",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-server-reject",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "2x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-ip-blocked",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "0.0.0.0/0,::/0",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-registration",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "e2e-script-injection",
+      "name": "E2E script-injection",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "e2e-separate-page",
+      "name": "E2E separate-page",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "e2e-custom-theme",
+      "name": "E2E custom-theme",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "e2e-server-reject",
+      "name": "E2E server-reject",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "e2e-ip-blocked",
+      "name": "E2E ip-blocked",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "e2e-user",
+      "email": "e2e-user@example.com",
+      "firstName": "E2E",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "e2e-password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
