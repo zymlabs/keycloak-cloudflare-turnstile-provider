@@ -1,19 +1,41 @@
-mode: ContinuousDelivery
+# GitVersion 6.x configuration (migrated from 5.x)
+#
+# Mode names changed in 6.x: v5 "ContinuousDelivery" is v6 "ManualDeployment", v5 "Mainline" is
+# v6 "ContinuousDeployment", and v6 "ContinuousDelivery" numbers pre-releases per commit.
+workflow: GitFlow/v1
+mode: ManualDeployment
+# v5 fell back to 0.1.0 before the first release tag; v6 falls back to 0.0.0
+next-version: 0.1.0
+# Reuse the version already tagged on HEAD instead of incrementing past it
+prevent-increment:
+  when-current-commit-tagged: true
 branches:
-  master:
-    tag: ''
+  main:
+    regex: ^master$|^main$
+    # Clean X.Y.Z with no pre-release counter; releases are cut by tagging master
+    mode: ContinuousDeployment
+    label: ''
     increment: Patch
   develop:
-    tag: alpha
+    # Every push to develop publishes a pre-release tagged with this version, so the number must be
+    # unique per commit (ManualDeployment reuses it until tagged, which collides on overlapping runs)
+    mode: ContinuousDelivery
+    label: alpha
     increment: Minor
+    # GitFlow/v1 sets this to false for develop, overriding the global setting above
+    prevent-increment:
+      when-current-commit-tagged: true
   feature:
-    tag: useBranchName
+    mode: ManualDeployment
+    label: '{BranchName}'
     increment: Minor
   hotfix:
-    tag: beta
+    mode: ManualDeployment
+    label: beta
     increment: Patch
   release:
-    tag: rc
+    mode: ManualDeployment
+    label: rc
     increment: None
 ignore:
   sha: []

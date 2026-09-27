@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Jackson is no longer bundled in the JAR; the provider uses the Jackson that ships with Keycloak
 - Docker Compose uses the official `quay.io/keycloak/keycloak` image (was `bitnamilegacy/keycloak`), selectable with `KEYCLOAK_VERSION`
 - Updated test dependencies, Maven plugins and GitHub Actions
+- Migrated GitVersion from 5.x to 6.8 (`gittools/actions@v4`). Release versions are unchanged; develop pre-release numbers now increase by one per commit instead of jumping
 - **Simplified architecture** from 4 to 3 implementation methods
 - **Refactored authenticator** to use shared CloudflareTurnstileHelper utilities
 - **Enhanced database schema** with comprehensive audit capabilities

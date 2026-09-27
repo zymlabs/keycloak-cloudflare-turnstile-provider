@@ -214,7 +214,7 @@ mvn clean package -DskipTests
 
 ### Versioning
 
-Versions are automatically calculated by GitVersion based on branch and commits:
+Versions are automatically calculated by GitVersion 6.x (`GitVersion.yml`) based on branch and commits:
 
 - **master branch**: `1.0.0`, `1.0.1`, `1.1.0`
 - **develop branch**: `1.1.0-alpha.1`, `1.1.0-alpha.2`
@@ -224,11 +224,11 @@ Versions are automatically calculated by GitVersion based on branch and commits:
 To see the calculated version:
 
 ```bash
-# Install GitVersion
-# See: https://gitversion.net/docs/
+# Install GitVersion 6.x (see https://gitversion.net/docs/), then:
+gitversion /showvariable SemVer
 
-# Show version info
-gitversion
+# Or with Docker
+docker run --rm -v "$(pwd):/repo" gittools/gitversion:6.8.2 /repo /showvariable SemVer
 ```
 
 ## Pull Request Process
