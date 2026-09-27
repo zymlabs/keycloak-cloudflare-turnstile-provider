@@ -101,7 +101,8 @@ test.describe('server-side enforcement', () => {
     await page.locator('#kc-login').click();
 
     await expect(page.getByText('Security verification failed. Please try again.')).toBeVisible();
-    expect(page.url()).not.toContain('e2e.test');
+    // The redirect_uri appears in Keycloak's own URLs, so check where the page is, not what the URL contains
+    expect(new URL(page.url()).host).not.toBe('e2e.test');
   });
 
   test('blocks blocklisted IPs before showing the widget', async ({ page }) => {
