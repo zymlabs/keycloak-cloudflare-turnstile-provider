@@ -8,8 +8,8 @@ The Cloudflare Turnstile provider offers **two theme variants** to ensure compat
 
 | Theme Variant | Parent Theme | Target Keycloak | PatternFly Version | Status |
 |---------------|--------------|-----------------|-------------------|---------|
-| **cloudflare-turnstile** | keycloak.v2 | 25-26+ | PatternFly 5 | ✅ Recommended |
-| **cloudflare-turnstile-legacy** | keycloak | 24.x | PatternFly 3/4 | ⚠️ Legacy Support |
+| **cloudflare-turnstile** | keycloak.v2 | 26+ | PatternFly 5 | ✅ Recommended |
+| **cloudflare-turnstile-legacy** | keycloak | 24.x-25.x | PatternFly 3/4 | ⚠️ Legacy Support |
 
 ## Quick Decision Tree
 
@@ -20,15 +20,7 @@ What version of Keycloak are you running?
 │  └─ Use: cloudflare-turnstile (modern variant)
 │     ✅ Future-proof, full feature support
 │
-├─ Keycloak 25.x (Current)
-│  ├─ Currently using keycloak.v2 theme?
-│  │  └─ Use: cloudflare-turnstile (modern variant)
-│  │
-│  └─ Currently using classic keycloak theme?
-│     └─ Use: cloudflare-turnstile-legacy
-│        (Plan migration to modern variant)
-│
-└─ Keycloak 24.x (LTS)
+└─ Keycloak 24.x or 25.x
    └─ Use: cloudflare-turnstile-legacy
       ⚠️ Classic keycloak theme deprecated in KC26+
       📅 Plan upgrade path to Keycloak 26+ and modern variant
@@ -38,7 +30,9 @@ What version of Keycloak are you running?
 
 ### Modern Variant: `cloudflare-turnstile`
 
-**For Keycloak 25+ (optimized for 26+)**
+**For Keycloak 26+**
+
+Built from Keycloak 26's `keycloak.v2` templates, which import files such as `field.ftl` that don't exist in Keycloak 25; on 25 the login page fails with `Template not found for name "field.ftl"`.
 
 #### Features
 - Based on `keycloak.v2` theme with PatternFly 5
@@ -49,7 +43,7 @@ What version of Keycloak are you running?
 
 #### When to Use
 - ✅ New Keycloak installations (26+)
-- ✅ Upgrading from Keycloak 24.x to 25-26+
+- ✅ Upgrading from Keycloak 24.x/25.x to 26+
 - ✅ Already using keycloak.v2 theme
 - ✅ Want modern UI/UX with dark mode
 
@@ -190,7 +184,7 @@ The theme variant you choose only affects **CUSTOM_THEME** mode. Other implement
 
 | Theme Variant | KC 24.x | KC 25.x | KC 26.x | KC 27.x+ |
 |---------------|---------|---------|---------|----------|
-| **cloudflare-turnstile** | ⚠️ | ✅ | ✅ | ✅ |
+| **cloudflare-turnstile** | ❌ | ❌ | ✅ | ✅ |
 | **cloudflare-turnstile-legacy** | ✅ | ✅ | ⚠️ | ❌ |
 
 **Legend**:

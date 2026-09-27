@@ -8,7 +8,7 @@ echo "Waiting for Keycloak to be ready..."
 
 # Wait for Keycloak to be fully started (max 60 seconds)
 for i in {1..60}; do
-  if curl -s http://keycloak:8080/health/ready > /dev/null 2>&1; then
+  if curl -sf http://keycloak:8080/realms/master > /dev/null 2>&1; then
     echo "Keycloak is ready!"
     break
   fi

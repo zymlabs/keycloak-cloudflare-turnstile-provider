@@ -1,0 +1,14 @@
+{
+  "name": "keycloak-cloudflare-turnstile-e2e",
+  "private": true,
+  "description": "Playwright end-to-end tests for the Keycloak Cloudflare Turnstile provider",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.20.4"
+  }
+}

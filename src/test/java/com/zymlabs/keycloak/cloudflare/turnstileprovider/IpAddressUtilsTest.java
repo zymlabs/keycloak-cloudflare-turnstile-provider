@@ -371,4 +371,42 @@ class IpAddressUtilsTest {
         assertThat(IpAddressUtils.isIpInList("192.168.1.2", "192.168.1.0/30"))
                 .isTrue();
     }
+
+    // ========== DNS safety: only IP literals, never hostname resolution ==========
+
+    @Test
+    @DisplayName("Hostname allowlist entries never match, so DNS can't decide who is allowlisted")
+    void testHostnameEntriesDoNotMatch() {
+        assertThat(IpAddressUtils.isIpInList("127.0.0.1", "localhost")).isFalse();
+        assertThat(IpAddressUtils.isIpInList("127.0.0.1", "localhost/32")).isFalse();
+    }
+
+    @Test
+    @DisplayName("A hostname as the client address is rejected, not resolved")
+    void testHostnameClientAddressIsRejected() {
+        assertThat(IpAddressUtils.isIpInList("localhost", "127.0.0.1,::1")).isFalse();
+    }
+
+    @Test
+    @DisplayName("validateIpList reports hostnames as invalid instead of accepting them")
+    void testValidateRejectsHostnames() {
+        assertThat(IpAddressUtils.validateIpList("10.0.0.1,localhost,example.com"))
+                .isNotNull()
+                .contains("localhost")
+                .contains("example.com")
+                .doesNotContain("'10.0.0.1'");
+    }
+
+    @Test
+    @DisplayName("parseLiteral accepts IPv4/IPv6 literals and rejects everything else without DNS")
+    void testParseLiteral() throws Exception {
+        assertThat(IpAddressUtils.parseLiteral("192.168.1.1").getHostAddress()).isEqualTo("192.168.1.1");
+        assertThat(IpAddressUtils.parseLiteral("2001:db8::1")).isNotNull();
+        assertThat(IpAddressUtils.parseLiteral("::ffff:10.0.0.1")).isNotNull();
+        for (String notLiteral : new String[]{"localhost", "example.com", "256.1.1.1", "1.2.3", "10.0.0.l", "", null}) {
+            assertThatThrownBy(() -> IpAddressUtils.parseLiteral(notLiteral))
+                    .as("'%s' must not be resolved", notLiteral)
+                    .isInstanceOf(java.net.UnknownHostException.class);
+        }
+    }
 }
