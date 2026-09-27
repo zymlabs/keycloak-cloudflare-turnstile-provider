@@ -61,7 +61,7 @@ See [docs/REGISTRATION.md](docs/REGISTRATION.md) for detailed registration setup
 
 ## Requirements
 
-- Keycloak 24.0.0 or later
+- Keycloak 24.0.0 or later (CI tests every change against 24.0.0, 25.0.6 and 26.7.4)
 - Java 17 or later
 - Cloudflare Turnstile site key and secret key (get them at https://dash.cloudflare.com/?to=/:account/turnstile)
 
@@ -71,14 +71,13 @@ For **Custom Theme** implementation (Option 4), this provider includes two theme
 
 | Theme Variant | Parent Theme | Keycloak Version | PatternFly | Status |
 |---------------|--------------|------------------|------------|--------|
-| **cloudflare-turnstile** | keycloak.v2 | 25-26+ | 5 | ✅ Recommended |
-| **cloudflare-turnstile-legacy** | keycloak | 24.x | 3/4 | ⚠️ Legacy Support |
+| **cloudflare-turnstile** | keycloak.v2 | 26+ | 5 | ✅ Recommended |
+| **cloudflare-turnstile-legacy** | keycloak | 24.x-25.x | 3/4 | ⚠️ Legacy Support |
 
 ### Quick Selection Guide
 
 - **Keycloak 26+**: Use `cloudflare-turnstile` (modern variant)
-- **Keycloak 24.x**: Use `cloudflare-turnstile-legacy` (legacy variant)
-- **Keycloak 25.x**: Try `cloudflare-turnstile` first, fallback to legacy if issues
+- **Keycloak 24.x and 25.x**: Use `cloudflare-turnstile-legacy` (legacy variant). The modern variant uses Keycloak 26 templates (e.g. `field.ftl`) and fails to render on 25.
 
 **Note**: Theme selection only applies to **Custom Theme** implementation (Option 3). Other implementation options (Separate Page, Script Injection) are theme-agnostic and work with any Keycloak theme.
 
@@ -112,7 +111,7 @@ cp zymlabs-cloudflare-turnstile-provider.jar /opt/keycloak/providers/
 ```yaml
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0.0
+    image: quay.io/keycloak/keycloak:26.7.4
     volumes:
       - ./zymlabs-cloudflare-turnstile-provider.jar:/opt/keycloak/providers/zymlabs-cloudflare-turnstile-provider.jar:rw
     command:
@@ -166,7 +165,7 @@ export KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloud
 ```yaml
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0.0
+    image: quay.io/keycloak/keycloak:26.7.4
     environment:
       KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
       KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
@@ -284,8 +283,8 @@ You can choose between three implementation approaches:
 
 1. Go to **Realm Settings** → **Themes**
 2. Under **Login Theme**, select:
-   - **cloudflare-turnstile** (for Keycloak 25-26+)
-   - **cloudflare-turnstile-legacy** (for Keycloak 24.x)
+   - **cloudflare-turnstile** (for Keycloak 26+)
+   - **cloudflare-turnstile-legacy** (for Keycloak 24.x-25.x)
 3. Click **Save**
 4. Copy the "Browser" flow
 5. Expand **"Username Password Form"** or **"Browser - Conditional OTP"** subflow
@@ -340,8 +339,8 @@ You can choose between four implementation approaches:
 
 1. Go to **Realm Settings** → **Themes**
 2. Under **Login Theme**, select:
-   - **cloudflare-turnstile** (for Keycloak 25-26+)
-   - **cloudflare-turnstile-legacy** (for Keycloak 24.x)
+   - **cloudflare-turnstile** (for Keycloak 26+)
+   - **cloudflare-turnstile-legacy** (for Keycloak 24.x-25.x)
 3. Click **Save**
 4. Go to **Authentication** → **Flows** → **Registration**
 5. Expand **"Registration form"** subflow
@@ -554,17 +553,47 @@ mvn clean package
 
 ```bash
 mvn test
+
+# Compile and unit test against a specific Keycloak version
+mvn test -Dkeycloak.version=24.0.0
 ```
 
 ### Local Development with Docker
 
 ```bash
-# Start Keycloak with PostgreSQL
-docker-compose up -d
+# Build the provider, then start Keycloak with PostgreSQL
+mvn package -DskipTests
+docker compose up -d
 
 # Keycloak will be available at http://localhost:8080
 # Admin credentials: admin / admin
+
+# Run a different Keycloak version (use `docker compose down -v` first when downgrading,
+# since Keycloak can't downgrade an existing database)
+KEYCLOAK_VERSION=24.0.0 docker compose up -d
 ```
+
+### End-to-End Tests (Playwright)
+
+The `e2e/` directory contains Playwright tests that drive real login and registration flows in a
+browser against the Docker Compose stack. They use Cloudflare's
+[test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/), so no real
+Turnstile account is needed, but they do need internet access to `challenges.cloudflare.com`.
+
+```bash
+mvn package -DskipTests
+docker compose up -d --wait keycloak
+
+cd e2e
+npm ci
+npx playwright install chromium
+npx playwright test
+```
+
+Setup imports a dedicated `turnstile-e2e` realm (`e2e/realms/turnstile-e2e-realm.json`) through
+the admin API on each run, so it starts clean and doesn't touch the demo realm. Each scenario
+(script injection, separate page, custom theme, server-side rejection, IP blocklist, registration)
+has its own client bound to its own browser flow.
 
 ## Troubleshooting
 

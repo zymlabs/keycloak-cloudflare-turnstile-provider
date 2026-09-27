@@ -88,7 +88,7 @@ mvn clean package
 # Run tests
 mvn test
 
-# Start local Keycloak with Docker Compose
+# Start local Keycloak with Docker Compose (see README for e2e tests)
 docker-compose up -d
 
 # Access Keycloak at http://localhost:8080

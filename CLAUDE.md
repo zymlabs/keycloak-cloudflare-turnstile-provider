@@ -301,13 +301,18 @@ List<CloudflareTurnstileCheckEntity> loginChecks = em
 
 **Included dependencies** (bundled in JAR):
 - httpclient
-- jackson-databind
 
 **Provided dependencies** (from Keycloak):
 - keycloak-core
 - keycloak-server-spi
 - keycloak-services
 - hibernate-core
+- jackson-databind (transitive from keycloak-core; deliberately not bundled so each Keycloak version uses its own Jackson)
+
+**Keycloak compatibility**: compiled against the latest Keycloak (`keycloak.version`), but must keep running on 24.0.0+.
+- Don't call Keycloak APIs added after 24; the CI `compatibility` matrix compiles against 24/25/26 to catch this
+- Keep `jandex-maven-plugin` at 3.1.x: newer versions write index version 13, which Keycloak 24 can't read
+- Keep Java `release` at 17
 
 **Output**: `target/zymlabs-cloudflare-turnstile-provider.jar`
 
@@ -315,9 +320,12 @@ List<CloudflareTurnstileCheckEntity> loginChecks = em
 
 - Unit tests for logic (IpAddressUtils, Service, Entity)
 - Mock-based tests for authenticator (future)
-- Integration tests with Docker Compose
+- Playwright e2e tests in `e2e/` against the Docker Compose stack (`KEYCLOAK_VERSION` selects the image); CI runs them on Keycloak 24.0.0, 25.0.6 and 26.7.4
+  - The `turnstile-e2e` realm (`e2e/realms/turnstile-e2e-realm.json`) is re-imported by `global-setup.ts`, which binds one client per scenario to its browser flow
+  - Uses Cloudflare test keys (`1x…AA` passes, secret `2x…AA` always fails server-side); needs internet access
+  - The realm must allow `https://challenges.cloudflare.com` in its CSP (`frame-src`, `script-src`) or the widget renders blank
 
-Test framework: JUnit 5 + AssertJ + Mockito
+Test framework: JUnit 5 + AssertJ + Mockito; Playwright for e2e
 
 ## Deployment
 

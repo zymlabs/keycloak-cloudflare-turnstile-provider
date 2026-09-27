@@ -412,8 +412,8 @@ This provider includes two theme variants for compatibility across different Key
 
 | Theme Variant | Parent Theme | Keycloak Version | PatternFly | When to Use |
 |---------------|--------------|------------------|------------|-------------|
-| **cloudflare-turnstile** | keycloak.v2 | 25-26+ | 5 | ✅ Modern Keycloak installations |
-| **cloudflare-turnstile-legacy** | keycloak | 24.x | 3/4 | ⚠️ Legacy support for KC 24.x |
+| **cloudflare-turnstile** | keycloak.v2 | 26+ | 5 | ✅ Modern Keycloak installations |
+| **cloudflare-turnstile-legacy** | keycloak | 24.x-25.x | 3/4 | ⚠️ Legacy support for KC 24.x-25.x |
 
 ### Selecting a Theme Variant
 
@@ -425,18 +425,13 @@ This provider includes two theme variants for compatibility across different Key
 4. Under **Login Theme** dropdown, select: **cloudflare-turnstile**
 5. Click **Save**
 
-#### For Keycloak 24.x
+#### For Keycloak 24.x and 25.x
 
 1. Log in to Keycloak Admin Console
 2. Navigate to **Realm Settings**
 3. Click the **Themes** tab
 4. Under **Login Theme** dropdown, select: **cloudflare-turnstile-legacy**
 5. Click **Save**
-
-#### For Keycloak 25.x (Transition Version)
-
-- **If using keycloak.v2 theme**: Select **cloudflare-turnstile**
-- **If using classic keycloak theme**: Select **cloudflare-turnstile-legacy**
 
 ### Verifying Theme Selection
 

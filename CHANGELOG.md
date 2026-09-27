@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Playwright end-to-end tests** (`e2e/`) covering script injection, separate page, custom theme, server-side rejection, IP blocklist and registration flows
+- **CI compatibility matrix**: unit tests compiled against Keycloak 24.0.0, 25.0.6 and 26.7.4, and e2e tests run the released JAR on each version; releases now require both to pass
 - **CloudflareTurnstileHelper** utility class with shared event logging and database methods
 - **CloudflareTurnstileValidator** for centralized token validation logic
 - **CloudflareTurnstileFormAction** for unified registration flow protection
@@ -46,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation and examples
 
 ### Changed
+- Build against Keycloak 26.7.4 (was 24.0.0); Keycloak 24.0.0 remains the minimum supported version
+- Jackson is no longer bundled in the JAR; the provider uses the Jackson that ships with Keycloak
+- Docker Compose uses the official `quay.io/keycloak/keycloak` image (was `bitnamilegacy/keycloak`), selectable with `KEYCLOAK_VERSION`
+- Updated test dependencies, Maven plugins and GitHub Actions
 - **Simplified architecture** from 4 to 3 implementation methods
 - **Refactored authenticator** to use shared CloudflareTurnstileHelper utilities
 - **Enhanced database schema** with comprehensive audit capabilities
@@ -76,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CloudflareTurnstileScriptInjectionActionFactory
 
 ### Fixed
+- Documented the `cloudflare-turnstile` theme as Keycloak 26+ (it failed with `Template not found for name "field.ftl"` on 25); use `cloudflare-turnstile-legacy` on 24 and 25
 - Eliminated code duplication between login and registration flows
 - Improved event logging consistency across all verification paths
 - Better error handling for database operations (non-blocking)

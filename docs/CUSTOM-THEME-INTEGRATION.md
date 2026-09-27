@@ -6,8 +6,8 @@ This guide shows how to integrate Cloudflare Turnstile verification into your ex
 
 The Cloudflare Turnstile provider includes two **reference theme implementations** that demonstrate how to integrate Turnstile widgets into Keycloak login and registration forms:
 
-- **`cloudflare-turnstile`** - Modern reference implementation (Keycloak 25-26+, PatternFly 5)
-- **`cloudflare-turnstile-legacy`** - Legacy reference implementation (Keycloak 24.x, PatternFly 3/4)
+- **`cloudflare-turnstile`** - Modern reference implementation (Keycloak 26+, PatternFly 5)
+- **`cloudflare-turnstile-legacy`** - Legacy reference implementation (Keycloak 24.x-25.x, PatternFly 3/4)
 
 **Important**: These bundled themes are **example implementations** that you can copy from. If you have an existing custom theme, you'll copy the relevant code snippets into your theme's templates rather than extending the bundled themes.
 
@@ -31,9 +31,7 @@ Select the reference theme that matches your Keycloak version:
 | Your Keycloak Version | Reference Theme to Copy From |
 |----------------------|------------------------------|
 | Keycloak 26+ | `cloudflare-turnstile` (modern) |
-| Keycloak 25.x using keycloak.v2 | `cloudflare-turnstile` (modern) |
-| Keycloak 25.x using classic keycloak | `cloudflare-turnstile-legacy` |
-| Keycloak 24.x | `cloudflare-turnstile-legacy` |
+| Keycloak 24.x or 25.x | `cloudflare-turnstile-legacy` |
 
 **How to check your theme's parent**:
 ```bash
@@ -81,7 +79,7 @@ cat theme/cloudflare-turnstile/login/register.ftl
 
 ## Step 3: Copy Code Into Your Custom Theme
 
-### Option A: Modern Theme (Keycloak 25-26+, PatternFly 5)
+### Option A: Modern Theme (Keycloak 26+, PatternFly 5)
 
 #### For Login Forms (`login.ftl`)
 
@@ -262,7 +260,7 @@ cat theme/cloudflare-turnstile/login/register.ftl
 
 ---
 
-### Option B: Legacy Theme (Keycloak 24.x, PatternFly 3/4)
+### Option B: Legacy Theme (Keycloak 24.x-25.x, PatternFly 3/4)
 
 #### For Login Forms (`login.ftl`)
 
