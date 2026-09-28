@@ -360,6 +360,38 @@ WHERE table_name = 'cloudflare_turnstile_check';
 3. **Implement Partitioning**
    - See DATABASE.md for partition strategy
 
+## Upgrade Issues
+
+### Keycloak Fails to Start After Upgrading to 26.6.1 or Later
+
+**Symptoms**: after upgrading (for example from 24.x or 25.x), Keycloak exits during startup with:
+
+```
+ERROR: Cannot invoke "org.keycloak.models.AuthenticationFlowModel.getId()" because "flow" is null
+    at org.keycloak.models.utils.DefaultAuthenticationFlows.addOrganizationBrowserFlowStep
+    at org.keycloak.migration.migrators.MigrateTo26_6_1.migrateRealm
+```
+
+**Cause**: a Keycloak migration (`MigrateTo26_6_1`) adds an Organization step to each realm's built-in flow named `browser` and assumes that flow exists. Keycloak 24.0.0 and 24.0.1 didn't create the built-in flows when importing a realm file that defines its own flows (fixed in 24.0.2), and this project's example realm only defined custom flows until it was fixed. A realm imported that way keeps the gap through every later upgrade until this migration fails. This is a Keycloak issue, not a problem with the provider. Realms created in the admin console, or imported on 24.0.2 or later, are not affected.
+
+**Check** which realms are affected (run against the Keycloak database before upgrading):
+
+```sql
+select r.name from realm r
+where not exists (select 1 from authentication_flow f
+                  where f.realm_id = r.id and f.alias = 'browser' and f.top_level);
+```
+
+**Fix** (before upgrading, on your current Keycloak version): in each affected realm, go to **Authentication → Create flow**, name it exactly `browser`, choose **Basic flow**, and save. Don't bind it to anything; the realm keeps using its current browser flow. Or use the admin API:
+
+```bash
+curl -X POST "$KEYCLOAK_URL/admin/realms/$REALM/authentication/flows" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
+  -d '{"alias":"browser","providerId":"basic-flow","topLevel":true,"builtIn":false}'
+```
+
+**If the upgrade already failed**: the realm migration is rolled back, so start your previous Keycloak version again, apply the fix above, and upgrade again. Keycloak does apply its schema changes before the migration fails. Starting 24.0.0 again on that database was tested and works, but always take a database backup before upgrading.
+
 ## Configuration Issues
 
 ### Changes Not Taking Effect
