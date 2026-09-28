@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **IP allowlist/blocklist no longer resolves hostnames through DNS.** `InetAddress.getByName` was called on list entries and on the client address, so a hostname entry was silently resolved on every login. That let whoever controls (or spoofs) the DNS record decide who is allowlisted (bypassing verification with `SKIP_VERIFICATION`), and put blocking DNS lookups on the login path. Only IPv4/IPv6 literals are now accepted: hostname entries never match and are skipped with a warning in the log, while the other entries in the list still apply. Bracketed IPv6 entries such as `[::1]` are no longer accepted; write them without brackets.
 
 ### Added
+- **CI upgrade check**: imports the example realms on Keycloak 24.0.0 and upgrades the same database to 26.7.4
 - **Playwright end-to-end tests** (`e2e/`) covering script injection, separate page, custom theme, server-side rejection, IP blocklist and registration flows
 - **CI compatibility matrix**: unit tests compiled against Keycloak 24.0.0, 25.0.6 and 26.7.4, and e2e tests run the released JAR on each version; releases now require both to pass
 - **CloudflareTurnstileHelper** utility class with shared event logging and database methods
@@ -86,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CloudflareTurnstileScriptInjectionActionFactory
 
 ### Fixed
+- Example realm (`examples/realms/turnstile-demo-realm.json`) now includes Keycloak's built-in `browser`, `direct grant`, `registration` and `saml ecp` flows. A realm imported from the old file on Keycloak 24.0.0 or 24.0.1 has no `browser` flow, and Keycloak 26.6.1+ then fails to start when upgrading it (`MigrateTo26_6_1` NullPointerException). Those realms need a `browser` flow added before upgrading; see [Troubleshooting](docs/TROUBLESHOOTING.md#keycloak-fails-to-start-after-upgrading-to-2661-or-later)
 - Documented the `cloudflare-turnstile` theme as Keycloak 26+ (it failed with `Template not found for name "field.ftl"` on 25); use `cloudflare-turnstile-legacy` on 24 and 25
 - Eliminated code duplication between login and registration flows
 - Improved event logging consistency across all verification paths
