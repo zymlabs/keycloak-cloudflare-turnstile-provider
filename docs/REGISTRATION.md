@@ -4,7 +4,7 @@ This guide explains how to add Cloudflare Turnstile verification to user registr
 
 ## Overview
 
-Turnstile can protect your registration forms from bot signups and automated account creation. This provider offers **four implementation options**:
+Turnstile can protect your registration forms from bot signups and automated account creation. This provider offers **three implementation options**:
 
 ![Registration with Cloudflare Turnstile](registration-with-turnstile-widget.png)
 *Cloudflare Turnstile widget integrated into Keycloak registration form*
@@ -51,31 +51,7 @@ Injects the Turnstile widget directly into the registration form via JavaScript.
 
 **Best for:** Modern browsers with JavaScript enabled
 
-### Option 3: Copied Template (Native Integration)
-
-Uses a modified copy of the base register.ftl template with Turnstile natively embedded.
-
-**User Experience:**
-1. User clicks "Register" link on login page
-2. Registration form appears with Turnstile widget natively embedded before the submit button
-3. User fills out registration form
-4. User completes Turnstile challenge
-5. User submits registration
-
-**Benefits:**
-- Native template integration (like built-in reCAPTCHA)
-- No JavaScript manipulation needed
-- Clean FreeMarker template approach
-- Widget is part of the original form render
-
-**Considerations:**
-- Requires maintaining a template copy (turnstile-register.ftl)
-- Template must be updated when Keycloak updates base register.ftl
-- Higher maintenance burden
-
-**Best for:** Organizations comfortable maintaining template copies and preferring native integration over JavaScript injection
-
-### Option 4: Custom Theme (Standard Keycloak Approach)
+### Option 3: Custom Theme (Standard Keycloak Approach)
 
 Uses a bundled custom theme that extends the base theme with Turnstile support.
 
@@ -105,18 +81,18 @@ Uses a bundled custom theme that extends the base theme with Turnstile support.
 
 ### Quick Comparison
 
-| Feature | Option 1: Separate Page | Option 2: Script Injection | Option 3: Copied Template | Option 4: Custom Theme |
-|---------|------------------------|----------------------------|---------------------------|------------------------|
-| **Theme Selection Required** | ❌ No | ❌ No | ❌ No | ✅ Yes (select "cloudflare-turnstile") |
-| **JavaScript Required** | ❌ No | ✅ Yes | ❌ No | ❌ No |
-| **Template Maintenance** | ✅ None | ✅ None | ⚠️ Update on Keycloak upgrade | ⚠️ Update on Keycloak upgrade |
-| **Inline Widget** | ❌ No (separate page) | ✅ Yes | ✅ Yes | ✅ Yes |
-| **CSP Compatibility** | ✅ Excellent | ⚠️ May have issues | ✅ Excellent | ✅ Excellent |
-| **Works Without JavaScript** | ✅ Yes | ❌ No | ✅ Yes | ✅ Yes |
-| **Multi-Realm Flexibility** | ✅ High | ✅ High | ✅ High | ⚠️ Medium (theme per realm) |
-| **Security Level** | ⭐⭐⭐⭐⭐ (verify first) | ⭐⭐⭐⭐ (inline) | ⭐⭐⭐⭐ (inline) | ⭐⭐⭐⭐ (inline) |
-| **Setup Complexity** | ⭐ Simple | ⭐ Simple | ⭐ Simple | ⭐⭐ Moderate (theme selection) |
-| **Keycloak-Native Approach** | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
+| Feature | Option 1: Separate Page | Option 2: Script Injection | Option 3: Custom Theme |
+|---------|------------------------|----------------------------|------------------------|
+| **Theme Selection Required** | ❌ No | ❌ No | ✅ Yes (select "cloudflare-turnstile") |
+| **JavaScript Required** | ❌ No | ✅ Yes | ❌ No |
+| **Template Maintenance** | ✅ None | ✅ None | ⚠️ Update on Keycloak upgrade |
+| **Inline Widget** | ❌ No (separate page) | ✅ Yes | ✅ Yes |
+| **CSP Compatibility** | ✅ Excellent | ⚠️ May have issues | ✅ Excellent |
+| **Works Without JavaScript** | ✅ Yes | ❌ No | ✅ Yes |
+| **Multi-Realm Flexibility** | ✅ High | ✅ High | ⚠️ Medium (theme per realm) |
+| **Security Level** | ⭐⭐⭐⭐⭐ (verify first) | ⭐⭐⭐⭐ (inline) | ⭐⭐⭐⭐ (inline) |
+| **Setup Complexity** | ⭐ Simple | ⭐ Simple | ⭐⭐ Moderate (theme selection) |
+| **Keycloak-Native Approach** | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐ |
 
 ### Decision Flowchart
 
@@ -124,19 +100,15 @@ Uses a bundled custom theme that extends the base theme with Turnstile support.
 Start: Choose Registration Protection Option
 │
 ├─ Do you already use custom Keycloak themes?
-│  ├─ Yes → Consider Option 4 (Custom Theme)
+│  ├─ Yes → Consider Option 3 (Custom Theme)
 │  └─ No → Continue...
 │
 ├─ Is JavaScript guaranteed to work in your environment?
-│  ├─ No (strict CSP, JS disabled, etc.) → Use Option 1 or Option 3
+│  ├─ No (strict CSP, JS disabled, etc.) → Use Option 1 or Option 3 (Custom Theme)
 │  └─ Yes → Continue...
 │
 ├─ Do you want maximum security (verify before form access)?
 │  ├─ Yes → Use Option 1 (Separate Page) ⭐ RECOMMENDED
-│  └─ No → Continue...
-│
-├─ Are you comfortable maintaining template copies?
-│  ├─ Yes → Use Option 3 (Copied Template)
 │  └─ No → Use Option 2 (Script Injection)
 ```
 
@@ -175,24 +147,7 @@ Start: Choose Registration Protection Option
 
 **Best for:** Modern web applications with JavaScript-enabled users
 
-#### Option 3: Copied Template
-
-**Pros:**
-- ✅ Native FreeMarker template integration
-- ✅ No JavaScript manipulation needed
-- ✅ No theme selection required
-- ✅ Widget rendered server-side
-- ✅ Works like built-in reCAPTCHA
-
-**Cons:**
-- ❌ Template copy must be maintained
-- ❌ Needs updating when Keycloak updates base template
-- ❌ Higher maintenance burden
-- ❌ Template bundled in JAR (not easily customizable by users)
-
-**Best for:** Organizations comfortable maintaining template copies
-
-#### Option 4: Custom Theme
+#### Option 3: Custom Theme
 
 **Pros:**
 - ✅ Standard Keycloak theme approach
@@ -230,7 +185,7 @@ Start: Choose Registration Protection Option
 **Step 2: Add Turnstile Authenticator**
 
 4. Click **Add execution**
-5. Select **"Cloudflare Turnstile (Registration)"** from the dropdown
+5. Select **"Cloudflare Turnstile"** (the authenticator, with Implementation Method `SEPARATE_PAGE`) from the dropdown
 6. The new execution will appear in the flow
 
 **Step 3: Configure Position**
@@ -269,7 +224,7 @@ Start: Choose Registration Protection Option
 **Step 2: Add Script Injection Action**
 
 5. Click **Add execution** within the "Registration form" subflow
-6. Select **"Cloudflare Turnstile (Script Injection)"** from the dropdown
+6. Select **"Cloudflare Turnstile"** (the form action, with Implementation Method `SCRIPT_INJECTION`) from the dropdown
 7. The new FormAction will appear in the subflow
 
 **Step 3: Configure Position**
@@ -301,53 +256,7 @@ Start: Choose Registration Protection Option
 - Check browser console for any JavaScript errors
 - If using strict Content Security Policy (CSP), you may need to allow `https://challenges.cloudflare.com`
 
-### Option 3: Copied Template (Native Integration)
-
-**Step 1: Navigate to Registration Flow**
-
-1. Select your realm in Keycloak Admin Console
-2. Go to **Authentication** → **Flows**
-3. Find **Registration** flow
-4. Expand the **Registration form** subflow
-
-**Step 2: Add Copied Template Action**
-
-5. Click **Add execution** within the "Registration form" subflow
-6. Select **"Cloudflare Turnstile (Copied Template)"** from the dropdown
-7. The new FormAction will appear in the subflow
-
-**Step 3: Configure Position**
-
-8. The FormAction should be in the "Registration form" subflow
-9. Order doesn't matter for FormActions (they all execute before form display)
-
-**Step 4: Set Requirement**
-
-10. Click the **Actions** menu (⋮) next to the Copied Template action
-11. Select **REQUIRED**
-
-**Step 5: Configure Settings**
-
-12. Click **⚙️ Settings** (gear icon) next to the execution
-13. Enter your site key, secret key, and other configuration
-14. Click **Save**
-
-**Step 6: Test**
-
-1. Navigate to your Keycloak login page
-2. Click **Register** link
-3. You should see the registration form with Turnstile widget natively embedded before the submit button
-4. Fill out the form and complete the Turnstile challenge
-5. Submit registration
-
-**Important Notes for Option 3:**
-- Uses a bundled template copy (turnstile-register.ftl) in the provider JAR
-- Widget is rendered server-side as part of the template
-- No JavaScript manipulation - native FreeMarker integration
-- Template is based on Keycloak 24.0.5's base/login/register.ftl
-- **Maintenance:** If Keycloak's base template changes in future versions, the bundled template may need updating
-
-### Option 4: Custom Theme (Standard Keycloak Approach)
+### Option 3: Custom Theme (Standard Keycloak Approach)
 
 **Step 1: Select the Turnstile Theme**
 
@@ -366,7 +275,7 @@ Start: Choose Registration Protection Option
 **Step 3: Add Custom Theme Action**
 
 9. Click **Add execution** within the "Registration form" subflow
-10. Select **"Cloudflare Turnstile (Custom Theme)"** from the dropdown
+10. Select **"Cloudflare Turnstile"** (the form action, with Implementation Method `CUSTOM_THEME`) from the dropdown
 11. The new FormAction will appear in the subflow
 
 **Step 4: Configure Position**
@@ -393,7 +302,7 @@ Start: Choose Registration Protection Option
 4. Fill out the form and complete the Turnstile challenge
 5. Submit registration
 
-**Important Notes for Option 4:**
+**Important Notes for Option 3:**
 - **CRITICAL:** You must select the "cloudflare-turnstile" theme in Realm Settings → Themes → Login Theme
 - Without selecting the theme, the widget will not appear (FormAction will set attributes, but standard register.ftl doesn't use them)
 - Theme extends the base theme and only overrides register.ftl
@@ -1006,21 +915,21 @@ The separate page approach (Option 1):
 
 ### Performance Characteristics
 
-| Aspect | Option 1 | Option 2 | Option 3 | Option 4 |
-|--------|----------|----------|----------|----------|
-| **Page Load Time** | Fast (separate page) | Fast + JS overhead | Fast | Fast |
-| **Widget Render** | Server-side | Client-side (after DOM load) | Server-side | Server-side |
-| **Total User Time** | +1 page navigation | Inline (no extra nav) | Inline (no extra nav) | Inline (no extra nav) |
-| **Network Requests** | 2 pages | 1 page + JS | 1 page | 1 page |
+| Aspect | Option 1 | Option 2 | Option 3 |
+|--------|----------|----------|----------|
+| **Page Load Time** | Fast (separate page) | Fast + JS overhead | Fast |
+| **Widget Render** | Server-side | Client-side (after DOM load) | Server-side |
+| **Total User Time** | +1 page navigation | Inline (no extra nav) | Inline (no extra nav) |
+| **Network Requests** | 2 pages | 1 page + JS | 1 page |
 
 ### Browser Compatibility
 
-| Requirement | Option 1 | Option 2 | Option 3 | Option 4 |
-|-------------|----------|----------|----------|----------|
-| **JavaScript** | Not required | **Required** | Not required | Not required |
-| **Modern Browser** | Any browser | Modern (ES6+) | Any browser | Any browser |
-| **CSP Restrictions** | Works with strict CSP | May require CSP adjustments | Works with strict CSP | Works with strict CSP |
-| **No-JS Users** | ✅ Supported | ❌ Not supported | ✅ Supported | ✅ Supported |
+| Requirement | Option 1 | Option 2 | Option 3 |
+|-------------|----------|----------|----------|
+| **JavaScript** | Not required | **Required** | Not required |
+| **Modern Browser** | Any browser | Modern (ES6+) | Any browser |
+| **CSP Restrictions** | Works with strict CSP | May require CSP adjustments | Works with strict CSP |
+| **No-JS Users** | ✅ Supported | ❌ Not supported | ✅ Supported |
 
 ### Upgrade Complexity
 
@@ -1034,12 +943,7 @@ When Keycloak releases a new version:
 - ✅ **Low impact** - No template dependencies
 - Only affected if Keycloak changes form structure drastically
 
-**Option 3 (Copied Template):**
-- ⚠️ **Medium-High impact** - Must diff and merge template changes
-- Template: `turnstile-register.ftl` (copy of base `register.ftl`)
-- Action: Compare base template changes and update copy
-
-**Option 4 (Custom Theme):**
+**Option 3 (Custom Theme):**
 - ⚠️ **Medium-High impact** - Theme must be updated
 - Template: `theme/cloudflare-turnstile/login/register.ftl`
 - Action: Compare base template changes and update theme
@@ -1047,16 +951,16 @@ When Keycloak releases a new version:
 ### Multi-Realm Deployments
 
 **Scenario 1: All realms need Turnstile**
-- **Best:** Option 1, 2, or 3 (configure per realm in auth flow)
-- **Works:** Option 4 (but must set theme for each realm)
+- **Best:** Option 1 or 2 (configure per realm in auth flow)
+- **Works:** Option 3 (but must set theme for each realm)
 
 **Scenario 2: Mixed (some realms with Turnstile, some without)**
-- **Best:** Option 1, 2, or 3 (enabled/disabled per realm)
-- **Not ideal:** Option 4 (theme applies to entire realm, harder to mix)
+- **Best:** Option 1 or 2 (enabled/disabled per realm)
+- **Not ideal:** Option 3 (theme applies to entire realm, harder to mix)
 
 **Scenario 3: Different configurations per realm**
-- **Best:** Option 1, 2, or 3 (separate auth flow configs)
-- **Works:** Option 4 (but shares same theme code)
+- **Best:** Option 1 or 2 (separate auth flow configs)
+- **Works:** Option 3 (but shares same theme code)
 
 ---
 
@@ -1064,18 +968,18 @@ When Keycloak releases a new version:
 
 ### Switching Between Options
 
-#### From Option 1 → Option 2, 3, or 4
+#### From Option 1 → Option 2 or 3
 
 **Steps:**
 1. Keep Option 1 authenticator **DISABLED** (don't remove yet)
 2. Add new option's execution to Registration form subflow
-3. Configure with same settings
+3. Leave **Use Realm Settings** on to use the realm tab's keys (or turn it off and set them here)
 4. Test thoroughly
 5. Remove Option 1 authenticator
 
 **Configuration reuse:** Site key, secret key, and all settings transfer directly
 
-#### From Option 2 → Option 1, 3, or 4
+#### From Option 2 → Option 1 or 3
 
 **Steps:**
 1. Add new option's execution
@@ -1086,14 +990,14 @@ When Keycloak releases a new version:
 
 **Note:** Moving from inline (Option 2) to separate page (Option 1) changes UX significantly
 
-#### From Option 3 or 4 → Different Option
+#### From Option 3 → Different Option
 
 **Steps:**
 1. Add new option's execution
 2. Copy configuration
 3. Test thoroughly
 4. Remove old option
-5. If leaving Option 4: Change Login Theme back to base or another theme
+5. Change Login Theme back to base or another theme
 
 **Template cleanup:** Old templates remain in JAR but won't be used
 
@@ -1107,8 +1011,7 @@ When Keycloak releases a new version:
 Registration Form (subflow)
 ├── Option 1 (DISABLED)
 ├── Option 2 (REQUIRED)  ← Currently active
-├── Option 3 (DISABLED)
-└── Option 4 (DISABLED)
+└── Option 3 (DISABLED)
 ```
 
 This allows:
