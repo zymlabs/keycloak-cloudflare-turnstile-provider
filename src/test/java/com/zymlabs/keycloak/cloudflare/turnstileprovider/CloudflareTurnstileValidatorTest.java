@@ -373,7 +373,10 @@ class CloudflareTurnstileValidatorTest {
 
         Map<String, String> config = CloudflareTurnstileValidator.getConfig(context);
 
-        assertThat(config).isEqualTo(expectedConfig);
+        // Empty step values mean "use the realm's setting", so they are not part of the result
+        Map<String, String> nonEmpty = new java.util.HashMap<>(expectedConfig);
+        nonEmpty.values().removeIf(String::isEmpty);
+        assertThat(config).isEqualTo(nonEmpty);
     }
 
     @Test

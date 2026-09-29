@@ -67,6 +67,14 @@ public class CloudflareTurnstileFormActionFactory implements FormActionFactory {
     public List<ProviderConfigProperty> getConfigProperties() {
         return ProviderConfigurationBuilder.create()
                 .property()
+                .name(CloudflareTurnstileRealmSettings.CONFIG_USE_REALM_SETTINGS)
+                .label("Use Realm Settings")
+                .helpText("Take the keys and policies from Realm settings > Cloudflare Turnstile; of this step's fields, only the Implementation Method applies. Turn off to use this step's own values (empty ones still come from the realm's settings).")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("true")
+                .add()
+
+                .property()
                 .name(CloudflareTurnstileFormAction.CONFIG_IMPLEMENTATION_METHOD)
                 .label("Implementation Method")
                 .helpText("How to render the Turnstile widget: " +
@@ -80,14 +88,14 @@ public class CloudflareTurnstileFormActionFactory implements FormActionFactory {
                 .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_SITE_KEY)
                 .label("Site Key")
-                .helpText("Your Cloudflare Turnstile site key")
+                .helpText("Your Cloudflare Turnstile site key (client-side key). On a flow step, leave empty to use the realm's Cloudflare Turnstile settings.")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
 
                 .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_SECRET_KEY)
                 .label("Secret Key")
-                .helpText("Your Cloudflare Turnstile secret key")
+                .helpText("Your Cloudflare Turnstile secret key (server-side key); a vault reference such as ${vault.turnstile-secret} is recommended. On a flow step, leave empty to use the realm's Cloudflare Turnstile settings.")
                 .type(ProviderConfigProperty.PASSWORD)
                 .secret(true)
                 .add()
