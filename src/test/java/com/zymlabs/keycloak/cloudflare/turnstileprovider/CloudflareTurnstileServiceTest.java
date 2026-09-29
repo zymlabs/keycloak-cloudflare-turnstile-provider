@@ -271,6 +271,16 @@ class CloudflareTurnstileServiceTest {
     }
 
     @Test
+    @DisplayName("verify should throw, not report a failed check, when Cloudflare can't be reached")
+    void verifyThrowsWhenCloudflareIsUnreachable() {
+        // Nothing can connect within a millisecond: an outage as far as the service can tell
+        try (CloudflareTurnstileService service = new CloudflareTurnstileService("secret", 1, 1)) {
+            assertThatThrownBy(() -> service.verify("token", "1.2.3.4"))
+                    .isInstanceOf(CloudflareTurnstileService.UnavailableException.class);
+        }
+    }
+
+    @Test
     @DisplayName("TurnstileVerificationResult toString should include all fields")
     void testVerificationResultToString() {
         CloudflareTurnstileService.TurnstileVerificationResult result =
