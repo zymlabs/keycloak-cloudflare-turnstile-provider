@@ -100,13 +100,28 @@ public class CloudflareTurnstileHelper {
                                              CloudflareTurnstileService.TurnstileVerificationResult result,
                                              String ipAddress,
                                              boolean isRegistration) {
+        logVerificationResult(event, result, ipAddress, isRegistration ? "registration" : "login");
+    }
+
+    /**
+     * Logs verification result details (success or failure).
+     *
+     * @param event the event builder
+     * @param result the verification result
+     * @param ipAddress the IP address
+     * @param flowType the flow: "login", "registration" or "reset-credentials"
+     */
+    public static void logVerificationResult(EventBuilder event,
+                                             CloudflareTurnstileService.TurnstileVerificationResult result,
+                                             String ipAddress,
+                                             String flowType) {
         if (event == null || result == null) {
             return;
         }
 
         event.detail("cloudflare_turnstile_success", String.valueOf(result.isSuccess()))
              .detail("cloudflare_turnstile_hostname", result.getHostname())
-             .detail("cloudflare_turnstile_flow_type", isRegistration ? "registration" : "login")
+             .detail("cloudflare_turnstile_flow_type", flowType)
              .detail("ip_address", ipAddress);
 
         if (result.getErrorCodes() != null && !result.getErrorCodes().isEmpty()) {
@@ -380,22 +395,20 @@ public class CloudflareTurnstileHelper {
      * Extracts connect timeout from configuration with default fallback.
      *
      * @param config the configuration map
-     * @return connect timeout in milliseconds (default: 5000)
+     * @return connect timeout in milliseconds (default, logged, when missing or invalid: 5000)
      */
     public static int getConnectTimeout(Map<String, String> config) {
-        return Integer.parseInt(config.getOrDefault(
-                CloudflareTurnstileAuthenticator.CONFIG_CONNECT_TIMEOUT, "5000"));
+        return CloudflareTurnstileRealmSettings.timeoutMillis(config, CloudflareTurnstileAuthenticator.CONFIG_CONNECT_TIMEOUT);
     }
 
     /**
      * Extracts read timeout from configuration with default fallback.
      *
      * @param config the configuration map
-     * @return read timeout in milliseconds (default: 5000)
+     * @return read timeout in milliseconds (default, logged, when missing or invalid: 5000)
      */
     public static int getReadTimeout(Map<String, String> config) {
-        return Integer.parseInt(config.getOrDefault(
-                CloudflareTurnstileAuthenticator.CONFIG_READ_TIMEOUT, "5000"));
+        return CloudflareTurnstileRealmSettings.timeoutMillis(config, CloudflareTurnstileAuthenticator.CONFIG_READ_TIMEOUT);
     }
 
     // ===== URL BUILDER METHODS =====

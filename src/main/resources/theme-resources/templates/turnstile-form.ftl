@@ -1,7 +1,9 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
+<#-- Shown before the sign-in form, or before the reset-password form in the reset flow -->
+<#assign resetFlow = isResetFlow!false>
+<@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=!resetFlow && realm.password && realm.registrationAllowed && !registrationDisabled??; section>
     <#if section = "header">
-        ${msg("loginAccountTitle")}
+        <#if resetFlow>${msg("emailForgotTitle")}<#else>${msg("loginAccountTitle")}</#if>
     <#elseif section = "form">
         <div id="kc-form">
             <div id="kc-form-wrapper">
@@ -40,7 +42,7 @@
                                 name="login"
                                 id="kc-login"
                                 <#if turnstileMode != 'invisible'>disabled</#if>>
-                            ${msg("doLogIn")}
+                            <#if resetFlow>${msg("doContinue")}<#else>${msg("doLogIn")}</#if>
                         </button>
                     </div>
                 </form>
