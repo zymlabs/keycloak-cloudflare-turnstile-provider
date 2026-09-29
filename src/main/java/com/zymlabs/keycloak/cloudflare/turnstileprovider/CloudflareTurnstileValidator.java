@@ -214,11 +214,8 @@ public class CloudflareTurnstileValidator {
      * @return Configuration map, or empty map if no config
      */
     public static Map<String, String> getConfig(AuthenticationFlowContext context) {
-        AuthenticatorConfigModel configModel = context.getAuthenticatorConfig();
-        if (configModel == null) {
-            logger.warn("No authenticator configuration found");
-            return Map.of();
-        }
-        return configModel.getConfig();
+        // The realm's Turnstile settings, overridden by this step's own configuration
+        return CloudflareTurnstileRealmSettings.effective(context.getSession(), context.getRealm(), context.getAuthenticatorConfig());
     }
+
 }

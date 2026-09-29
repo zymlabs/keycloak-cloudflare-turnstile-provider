@@ -15,6 +15,12 @@ services:
       timeout: 5s
       retries: 30
 
+  mailpit:
+    # Catches Keycloak's emails (reset-password links in the e2e tests). Web UI and API on 8025.
+    image: axllent/mailpit:v1.31
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
   keycloak:
     # Override to test other versions, e.g. KEYCLOAK_VERSION=24.0.0 docker compose up
     image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.7.4}
@@ -33,6 +39,8 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
 
       KC_HTTP_ENABLED: 'true'
+      # The realm settings tab (Realm settings > Cloudflare Turnstile) is a declarative-UI tab
+      KC_FEATURES: declarative-ui
       KC_HOSTNAME_STRICT: 'false'
       KC_LOG_LEVEL: INFO,com.zymlabs.keycloak.cloudflare.turnstileprovider:debug
 
@@ -47,6 +55,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
     # The official image has no curl; probe the master realm over bash's /dev/tcp instead.
     # /realms/master is served on port 8080 on every supported version (health moved to 9000 in 25).

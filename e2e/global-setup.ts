@@ -36,7 +36,7 @@ export default async function globalSetup() {
     const flow = flows.find((f) => f.alias === `e2e-browser-${scenario}`);
     if (!flow) throw new Error(`No browser flow for client ${client.clientId}`);
     client.authenticationFlowBindingOverrides = { browser: flow.id };
-    if (scenario === 'custom-theme') {
+    if (scenario.startsWith('custom-theme')) {
       // The modern theme is built on Keycloak 26's keycloak.v2 templates (e.g. field.ftl);
       // 24 and 25 use the legacy variant
       client.attributes = {

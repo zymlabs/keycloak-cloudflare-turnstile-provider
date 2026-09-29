@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Realm-wide settings:** a "Cloudflare Turnstile" tab in Realm settings (component
+  `cloudflare-turnstile-settings`, needs Keycloak's `declarative-ui` feature, or set it through realm
+  JSON) with the keys and policies. The secret key may be a vault reference, on the tab or on a step.
+- **Reset-password protection:** the authenticator works in the reset-credentials ("Forgot your
+  password?") flow. `SEPARATE_PAGE` shows a Turnstile page, worded for the reset, before Keycloak's
+  reset page. `SCRIPT_INJECTION` puts the widget on Keycloak's own reset page and takes the place of
+  the Choose User step, whose logic it reuses (`CUSTOM_THEME` uses script injection there). The
+  emailed reset link needs no new check. `REQUIRE_MFA` blocks there: nothing could ask for a second
+  factor before the reset email is sent. Events and records have the flow type `reset-credentials`
+  (`RESET_CREDENTIALS` in the database).
+- `CloudflareTurnstileAuthenticator.FAILED_NOTE`: the authentication-session note `REQUIRE_MFA` sets.
+- E2E tests for both reset options, the registration separate page, allowlisted addresses, realm
+  settings, `login_hint`, a preset user, passkeys, token-less posts and brute-force counting; the
+  compose file now includes Mailpit for Keycloak's emails and turns on `declarative-ui`.
+
+### Changed
+- **With the widget inline, the sign-in page is Keycloak's own username/password form**, built and
+  checked by Keycloak's step with the widget added. `login_hint` and remembered usernames are filled
+  in, a user identified by an earlier step is asked only for the password, and on Keycloak 26 (with
+  `SCRIPT_INJECTION`) passkeys work, including autofill; Keycloak 26 also records the password as the
+  credential used. A passkey submission (WebAuthn fields, no username or password) posts without a
+  Turnstile token and goes to Keycloak's form unchecked: a passkey can't be guessed. The bundled
+  `cloudflare-turnstile` theme offers no passkeys (it supports Keycloak 26.0, which has no passkey
+  templates).
+- Flow steps have a **Use Realm Settings** switch, on for steps created in the admin console: the
+  step then takes everything but its implementation method from the realm tab. With it off (or
+  absent, as in existing configurations), the step's own values apply, and an empty value now means
+  "use the realm's setting" rather than "empty".
+- In a registration flow the authenticator always shows its separate page; inline widgets there come
+  from the registration form action.
+- Failed checks that block, and Cloudflare errors with FAIL_CLOSED, are recorded with the event errors
+  `turnstile_verification_failed` and `turnstile_verification_error` instead of
+  `invalid_user_credentials` (or `invalid_registration`), so they aren't taken for wrong passwords
+  (for example by IP-throttling listeners, which would otherwise block busy shared addresses during a
+  Cloudflare outage).
+- Turnstile's refusals (failed check, Cloudflare error, blocklisted IP, missing configuration), and
+  anything Keycloak refuses on a passkey submission, no longer count toward Keycloak's brute-force
+  lockout of the account named so far: otherwise anyone could lock accounts without solving a check.
+- The step's reference category is now `password` (was `captcha`), as it stands in for the
+  username/password form.
+
+### Fixed
+- `FAIL_OPEN` and `FAIL_CLOSED` never applied to Cloudflare outages: network errors, timeouts and
+  unreadable answers were reported as failed checks (`network-error`), so the verification failure
+  action applied instead (BLOCK by default). They are now verification errors, handled by the error
+  handling mode.
+- On Keycloak 26.5 and later, wrong passwords on the inline sign-in page didn't count toward
+  brute-force lockout (Keycloak counts only steps of the password, OTP and recovery-code categories),
+  and a successful inline sign-in didn't reset the count.
+- The bundled `cloudflare-turnstile` theme showed no password field when an earlier step had already
+  identified the user (re-authentication, username-first flows).
+- The authenticator never recognized the registration flow (it read a session note Keycloak doesn't
+  set), so its page there had the sign-in wording and events said `login`. It now uses Keycloak's
+  flow path.
+- With the widget inline on the sign-in page, allowlisted addresses (`SKIP_VERIFICATION`) and
+  Cloudflare outages with `FAIL_OPEN` skipped the username and password check, so those sign-ins
+  failed even with the right password. The credentials are now checked on every path, before the
+  attempt is audited as allowed.
+- A timeout setting that isn't a positive number of milliseconds made every verification error out,
+  which with `FAIL_OPEN` let every attempt through unchecked. Such values now fall back to 5000 ms
+  (with a warning), and the realm tab refuses them.
+
 ### Security
 - **IP allowlist/blocklist no longer resolves hostnames through DNS.** `InetAddress.getByName` was called on list entries and on the client address, so a hostname entry was silently resolved on every login. That let whoever controls (or spoofs) the DNS record decide who is allowlisted (bypassing verification with `SKIP_VERIFICATION`), and put blocking DNS lookups on the login path. Only IPv4/IPv6 literals are now accepted: hostname entries never match and are skipped with a warning in the log, while the other entries in the list still apply. Bracketed IPv6 entries such as `[::1]` are no longer accepted; write them without brackets.
 
@@ -69,6 +132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Improved development workflow** with auto-approval settings and build step detection
 
 ### Removed
+- The unused `turnstile-register.ftl` template (no implementation method renders it) and the
+  "Copied Template" registration option documented for it.
 - **Copied Template implementation** (consolidated into other methods)
 - **14 legacy implementation classes**:
   - CloudflareTurnstileCopiedTemplateAction

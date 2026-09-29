@@ -71,7 +71,9 @@ public class CloudflareTurnstileService implements Closeable {
      *
      * @param token The cf-turnstile-response token from the client
      * @param remoteIp The user's IP address (optional but recommended)
-     * @return Verification result
+     * @return Verification result: Cloudflare's answer about the token
+     * @throws UnavailableException when Cloudflare couldn't be asked, or its answer couldn't be read
+     *         (the caller's error handling mode, FAIL_OPEN or FAIL_CLOSED, decides)
      */
     public TurnstileVerificationResult verify(String token, String remoteIp) {
         if (token == null || token.trim().isEmpty()) {
@@ -126,9 +128,15 @@ public class CloudflareTurnstileService implements Closeable {
             return result;
 
         } catch (IOException e) {
-            logger.errorf(e, "Failed to verify Turnstile token: %s", e.getMessage());
-            return new TurnstileVerificationResult(false, "network-error", null, null,
-                    String.format("Error: %s", e.getMessage()));
+            // Not an answer about the token: an outage, a timeout, or a reply that isn't Cloudflare's JSON
+            throw new UnavailableException("Cloudflare Turnstile couldn't be asked: " + e.getMessage(), e);
+        }
+    }
+
+    /** Cloudflare couldn't be asked about a token, or its answer couldn't be read. */
+    public static class UnavailableException extends RuntimeException {
+        public UnavailableException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

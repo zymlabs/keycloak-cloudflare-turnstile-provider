@@ -52,9 +52,11 @@ public class CloudflareTurnstileFormAction implements FormAction {
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
         logger.info("***** CloudflareTurnstileFormAction.buildPage() CALLED *****");
-        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
-        if (config == null) {
-            logger.warn("No authenticator configuration found for Turnstile Form Action");
+        Map<String, String> configMap = CloudflareTurnstileRealmSettings.effective(context.getSession(), context.getRealm(),
+                context.getAuthenticatorConfig());
+        if (!CloudflareTurnstileRealmSettings.usable(configMap)) {
+            logger.warn("Cloudflare Turnstile has no site key and secret key: set them on the realm's Cloudflare Turnstile "
+                    + "settings tab or on this step");
             return;
         }
 
@@ -76,7 +78,6 @@ public class CloudflareTurnstileFormAction implements FormAction {
 
         logger.debug("Registration flow check passed, proceeding with widget rendering");
 
-        Map<String, String> configMap = config.getConfig();
         String ipAddress = CloudflareTurnstileValidator.getClientIpAddress(context);
         logger.debugf("Client IP address: %s", ipAddress);
 
@@ -171,10 +172,12 @@ public class CloudflareTurnstileFormAction implements FormAction {
     @Override
     public void validate(ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+        Map<String, String> configMap = CloudflareTurnstileRealmSettings.effective(context.getSession(), context.getRealm(),
+                context.getAuthenticatorConfig());
 
-        if (config == null) {
-            logger.error("No authenticator configuration found for validation");
+        if (!CloudflareTurnstileRealmSettings.usable(configMap)) {
+            logger.error("Cloudflare Turnstile has no site key and secret key: set them on the realm's Cloudflare Turnstile "
+                    + "settings tab or on this step");
             setValidationError(context, formData, "turnstileConfigError", true);
             return;
         }
@@ -187,7 +190,6 @@ public class CloudflareTurnstileFormAction implements FormAction {
             return;
         }
 
-        Map<String, String> configMap = config.getConfig();
         String ipAddress = CloudflareTurnstileValidator.getClientIpAddress(context);
 
         // Check IP blocklist
@@ -262,12 +264,11 @@ public class CloudflareTurnstileFormAction implements FormAction {
 
         CloudflareTurnstileValidator.ValidationResult validationResult;
 
-        try {
-            int connectTimeout = Integer.parseInt(configMap.getOrDefault(
-                CloudflareTurnstileAuthenticator.CONFIG_CONNECT_TIMEOUT, "5000"));
-            int readTimeout = Integer.parseInt(configMap.getOrDefault(
-                CloudflareTurnstileAuthenticator.CONFIG_READ_TIMEOUT, "5000"));
+        // Parsed outside the try below: a bad value mustn't count as a Cloudflare error (FAIL_OPEN would then skip every check)
+        int connectTimeout = CloudflareTurnstileHelper.getConnectTimeout(configMap);
+        int readTimeout = CloudflareTurnstileHelper.getReadTimeout(configMap);
 
+        try {
             try (CloudflareTurnstileService service = new CloudflareTurnstileService(secretKey, connectTimeout, readTimeout)) {
                 validationResult = CloudflareTurnstileValidator.validateTurnstile(
                         turnstileResponse, ipAddress, configMap, service);

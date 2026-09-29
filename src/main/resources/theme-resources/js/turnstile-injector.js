@@ -62,6 +62,7 @@
         var selectors = [
             'form#kc-form-login',           // Login form
             'form#kc-register-form',        // Registration form
+            'form#kc-reset-password-form',  // Reset password ("Forgot your password?") form
             'form[action*="login"]',        // Any login form
             'form[action*="registration"]', // Any registration form
             'form[name="login"]',
