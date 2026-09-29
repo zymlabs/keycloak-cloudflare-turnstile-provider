@@ -5,6 +5,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -28,7 +29,10 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
 
     @Override
     public String getReferenceCategory() {
-        return "captcha";
+        // Inline, this step is the username/password form: Keycloak (26.5+) counts failed sign-ins toward
+        // brute-force lockout only for steps of the password, OTP and recovery-code categories. Turnstile's
+        // own refusals never count (they use forceChallenge), so the separate page is unaffected.
+        return PasswordCredentialModel.TYPE;
     }
 
     @Override
@@ -53,9 +57,9 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
     @Override
     public String getHelpText() {
         return "Validates users with Cloudflare Turnstile CAPTCHA challenge. " +
-                "Automatically works for both login and registration flows. " +
-                "Displays a Turnstile widget before the form and verifies the response token. " +
-                "Supports advanced features like IP allowlists/blocklists, fail modes, and conditional MFA.";
+                "Works in sign-in, registration and reset-password flows. " +
+                "Displays a Turnstile widget before (or on) the form and verifies the response token. " +
+                "Supports IP allowlists/blocklists, fail modes, and a note for a later step to ask for a second factor when a check fails.";
     }
 
     @Override
@@ -63,16 +67,24 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
         return ProviderConfigurationBuilder.create()
 
                 .property()
+                .name(CloudflareTurnstileRealmSettings.CONFIG_USE_REALM_SETTINGS)
+                .label("Use Realm Settings")
+                .helpText("Take the keys and policies from Realm settings > Cloudflare Turnstile; of this step's fields, only the Implementation Method applies. Turn off to use this step's own values (empty ones still come from the realm's settings).")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("true")
+                .add()
+
+                .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_SITE_KEY)
                 .label("Site Key")
-                .helpText("Your Cloudflare Turnstile site key (client-side key)")
+                .helpText("Your Cloudflare Turnstile site key (client-side key). On a flow step, leave empty to use the realm's Cloudflare Turnstile settings.")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
 
                 .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_SECRET_KEY)
                 .label("Secret Key")
-                .helpText("Your Cloudflare Turnstile secret key (server-side key)")
+                .helpText("Your Cloudflare Turnstile secret key (server-side key); a vault reference such as ${vault.turnstile-secret} is recommended. On a flow step, leave empty to use the realm's Cloudflare Turnstile settings.")
                 .type(ProviderConfigProperty.PASSWORD)
                 .secret(true)
                 .add()
@@ -80,7 +92,7 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
                 .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_IMPLEMENTATION_METHOD)
                 .label("Implementation Method")
-                .helpText("How to integrate Turnstile: SEPARATE_PAGE shows Turnstile on its own page (default), SCRIPT_INJECTION uses JavaScript to inject widget inline (works with any theme), CUSTOM_THEME renders widget inline using theme's template (requires theme support).")
+                .helpText("How to integrate Turnstile: SEPARATE_PAGE shows Turnstile on its own page (default), SCRIPT_INJECTION uses JavaScript to inject widget inline (works with any theme), CUSTOM_THEME renders widget inline using theme's template (requires theme support). In a sign-in flow, the inline methods take the place of Username Password Form (delete it). In a reset-password flow, they put the widget on Keycloak's reset page and take the place of the Choose User step. In a registration flow this step always uses its own page (inline widgets there come from the registration form action).")
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options("SEPARATE_PAGE", "SCRIPT_INJECTION", "CUSTOM_THEME")
                 .defaultValue("SEPARATE_PAGE")
@@ -140,7 +152,7 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
                 .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_FAIL_ACTION)
                 .label("Verification Failure Action")
-                .helpText("Action to take when Turnstile verification completes but fails (returns success=false). BLOCK denies access, ALLOW permits access with warning, REQUIRE_MFA adds MFA requirement.")
+                .helpText("Action to take when Turnstile verification completes but fails (returns success=false). BLOCK denies access, ALLOW permits access with warning, REQUIRE_MFA continues and sets the authentication-session note turnstile_failed for a later step (e.g. a condition before a second factor); in the reset-password flow REQUIRE_MFA blocks.")
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options("BLOCK", "ALLOW", "REQUIRE_MFA")
                 .defaultValue("BLOCK")
