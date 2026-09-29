@@ -16,7 +16,7 @@ Complete database schema and query reference for the Cloudflare Turnstile Keyclo
 
 The extension creates a single table: `cloudflare_turnstile_check`
 
-This table stores all Turnstile verification attempts when `recordVerifications` is enabled.
+This table stores all Turnstile verification attempts when `recordVerifications` is enabled. Sign-ins that Turnstile does not check (passkey sign-ins, pages Keycloak skips because the user is already known) have no row; see [AUDIT.md](AUDIT.md#what-is-not-tracked).
 
 ### Automatic Creation
 
@@ -93,7 +93,7 @@ CREATE TABLE cloudflare_turnstile_check (
 | `hostname` | VARCHAR(255) | Yes | Hostname from Cloudflare response |
 | `event_id` | VARCHAR(36) | Yes | Keycloak event ID for correlation |
 | `session_id` | VARCHAR(36) | Yes | Keycloak session ID |
-| `flow_type` | VARCHAR(50) | Yes | Flow type: "login" or "registration" |
+| `flow_type` | VARCHAR(50) | Yes | Flow type: `LOGIN`, `REGISTRATION` or `RESET_CREDENTIALS` |
 | `raw_response` | TEXT | Yes | Complete JSON response from Cloudflare |
 | `fail_mode` | VARCHAR(20) | Yes | Configured error handling mode: FAIL_OPEN, FAIL_CLOSED |
 | `fail_action` | VARCHAR(20) | Yes | Configured verification failure action: BLOCK, ALLOW, REQUIRE_MFA |

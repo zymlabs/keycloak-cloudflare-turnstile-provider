@@ -34,7 +34,7 @@ The provider maintains TWO parallel audit trails:
 
 ### What Gets Tracked
 
-Every Turnstile verification attempt (login and registration) records:
+Every Turnstile verification attempt (login and registration) records the following. Sign-ins that Turnstile does not check leave no record (see [What Is Not Tracked](#what-is-not-tracked)).
 
 ✅ **Verification Outcome** - Whether Cloudflare verification passed or failed
 ✅ **Final Authentication Decision** - Whether user was ultimately allowed or blocked
@@ -44,6 +44,13 @@ Every Turnstile verification attempt (login and registration) records:
 ✅ **Flow Context** - Login vs registration
 ✅ **Error Details** - Cloudflare error codes, exception messages
 ✅ **Correlation IDs** - Link to Keycloak events and sessions
+
+### What Is Not Tracked
+
+Some sign-ins never reach a Turnstile check, so they produce no `cloudflare_turnstile_check` row and no `cloudflare_turnstile_*` event details:
+
+- **Passkey sign-ins** (including autofill) with the `SCRIPT_INJECTION` method on Keycloak 26. The sign-in page is Keycloak's own form, and its passkey form posts to Keycloak without a Turnstile token. Turnstile is not needed there: a passkey cannot be guessed. The bundled `cloudflare-turnstile` theme (`CUSTOM_THEME`) offers no passkeys.
+- **Pages Keycloak skips** because the user is already known, such as an emailed reset link, or the reset page when the user is already signed in.
 
 ### Configuration Snapshot
 
@@ -68,7 +75,7 @@ Each audit record includes flags showing how the decision was made:
 
 ## Database Audit Trail
 
-When **Record Verifications** is enabled in the authenticator configuration, all verification attempts are stored in the `cloudflare_turnstile_check` table.
+When **Record Verifications** is enabled in the authenticator configuration, all verification attempts are stored in the `cloudflare_turnstile_check` table. Sign-ins that Turnstile does not check (passkeys, skipped pages) have no row.
 
 ### Database Schema
 
@@ -148,19 +155,19 @@ Standard `action_reason` values:
 
 ## Event Audit Trail
 
-All verification attempts log detailed information to Keycloak's event system, visible in:
+All verification attempts log detailed information to Keycloak's event system (sign-ins that Turnstile does not check, such as passkeys, have no Turnstile details), visible in:
 - **Keycloak Admin Console** → Events → Login Events
 - **External Event Listeners** (SIEM, log aggregators, analytics platforms)
 
 ### Event Detail Fields
 
-Every verification attempt logs 15+ event detail fields:
+Every verification attempt logs 15+ event detail fields (none for [sign-ins Turnstile does not check](#what-is-not-tracked)):
 
 #### Basic Fields
 - `cloudflare_turnstile_success` - "true" or "false"
 - `cloudflare_turnstile_hostname` - Hostname from Cloudflare
 - `cloudflare_turnstile_errors` - Comma-separated error codes
-- `cloudflare_turnstile_flow_type` - "login" or "registration"
+- `cloudflare_turnstile_flow_type` - "login", "registration" or "reset-credentials"
 - `ip_address` - User's IP address
 
 #### Configuration Context
@@ -561,6 +568,7 @@ Check:
 1. **Record Verifications** setting enabled in authenticator config
 2. Database connectivity (check Keycloak logs)
 3. Liquibase migrations applied (check `DATABASECHANGELOG` table)
+4. The sign-in was one Turnstile checks: passkey sign-ins and pages Keycloak skips leave no record (see [What Is Not Tracked](#what-is-not-tracked))
 
 ### Missing Event Details
 

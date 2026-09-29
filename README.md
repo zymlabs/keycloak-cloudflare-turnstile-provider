@@ -1,6 +1,6 @@
 # Keycloak Cloudflare Turnstile Provider
 
-A Keycloak authentication provider that integrates Cloudflare Turnstile CAPTCHA verification into the authentication flow. This extension adds bot protection and security verification to your Keycloak login process.
+A Keycloak authentication provider that integrates Cloudflare Turnstile CAPTCHA verification into the authentication flow. This extension adds bot protection and security verification to Keycloak's sign-in, registration and reset-password pages.
 
 ![Login with Cloudflare Turnstile](docs/login-with-turnstile-widget.png)
 *Cloudflare Turnstile widget integrated into Keycloak login flow*
@@ -9,7 +9,7 @@ A Keycloak authentication provider that integrates Cloudflare Turnstile CAPTCHA 
 
 ### Implementation Options
 
-This provider offers **three flexible implementation approaches** that work for both login and registration protection. Choose based on your deployment requirements and maintenance preferences:
+This provider offers **three flexible implementation approaches** for sign-in, registration and reset-password protection (on the reset page, the custom-theme approach uses script injection). Choose based on your deployment requirements and maintenance preferences:
 
 | Option | Approach | Theme Required | JavaScript | Maintenance | When to Use |
 |--------|----------|----------------|------------|-------------|-------------|
@@ -26,10 +26,10 @@ This provider offers **three flexible implementation approaches** that work for 
 
 Add Cloudflare Turnstile verification to your authentication flow using any of the [three implementation options](#implementation-options) above.
 
-**Available Authenticators:**
-- Cloudflare Turnstile (Separate Page) ⭐ - Recommended
-- Cloudflare Turnstile - Login (Script Injection)
-- Cloudflare Turnstile - Login (Custom Theme)
+**Available Authenticator:** **Cloudflare Turnstile**, with an Implementation Method of
+- `SEPARATE_PAGE` ⭐ - Recommended: its own page before the sign-in form
+- `SCRIPT_INJECTION`: the widget on Keycloak's own sign-in page (this step replaces Username Password Form and runs it, so `login_hint`, remembered usernames and passkeys keep working)
+- `CUSTOM_THEME`: the widget rendered by the bundled theme (this step replaces Username Password Form; the bundled theme offers no passkeys)
 
 See [Usage Examples - Login Protection](#example-1-login-protection) for detailed setup instructions.
 
@@ -37,12 +37,21 @@ See [Usage Examples - Login Protection](#example-1-login-protection) for detaile
 
 Add Cloudflare Turnstile verification to your registration flow using any of the [three implementation options](#implementation-options) above.
 
-**Available Form Actions:**
-- Cloudflare Turnstile (Registration) - Separate Page ⭐ - Recommended
-- Cloudflare Turnstile (Script Injection)
-- Cloudflare Turnstile (Custom Theme)
+**Available steps:**
+- **Cloudflare Turnstile** authenticator with `SEPARATE_PAGE` ⭐ - Recommended: its own page before the registration form
+- **Cloudflare Turnstile** form action with `SCRIPT_INJECTION`: the widget on the registration form
+- **Cloudflare Turnstile** form action with `CUSTOM_THEME`: the widget rendered by the bundled theme
 
 See [docs/REGISTRATION.md](docs/REGISTRATION.md) for detailed registration setup guide.
+
+### Reset-Password Protection
+
+Keep bots from using "Forgot your password?" to send reset emails, with the same authenticator:
+
+- **Separate page:** a Turnstile page before Keycloak's reset page
+- **Script injection:** the widget on Keycloak's own reset page (the custom-theme method uses script injection there)
+
+See [Usage Examples - Reset-Password Protection](#example-3-reset-password-protection).
 
 ### Widget Customization
 - **Multiple widget modes** - Managed, non-interactive, or invisible challenges
@@ -54,7 +63,7 @@ See [docs/REGISTRATION.md](docs/REGISTRATION.md) for detailed registration setup
 - **Fail-safe modes** - Configure FAIL_OPEN or FAIL_CLOSED behavior for API errors
 
 ### Monitoring & Compliance
-- **Audit logging** - Optional database storage of all verification attempts
+- **Audit logging** - Optional database storage of every Turnstile check (sign-ins Turnstile does not check, such as passkeys, leave no record)
 - **Event integration** - Logs to Keycloak events for monitoring and analytics
 - **Analytics queries** - Pre-built SQL queries for security analysis
 - **Customizable timeouts** - Configure connection and read timeouts for Cloudflare API calls
@@ -67,7 +76,7 @@ See [docs/REGISTRATION.md](docs/REGISTRATION.md) for detailed registration setup
 
 ## Theme Variants
 
-For **Custom Theme** implementation (Option 4), this provider includes two theme variants to ensure compatibility across different Keycloak versions:
+For **Custom Theme** implementation (Option 3), this provider includes two theme variants to ensure compatibility across different Keycloak versions:
 
 | Theme Variant | Parent Theme | Keycloak Version | PatternFly | Status |
 |---------------|--------------|------------------|------------|--------|
@@ -229,6 +238,33 @@ For detailed CSP troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.
 | **Connect Timeout** | String | `5000` | Connection timeout in milliseconds |
 | **Read Timeout** | String | `5000` | Read timeout in milliseconds |
 
+### Realm-wide settings
+
+Instead of repeating keys on every flow step, set them once per realm: **Realm settings →
+Cloudflare Turnstile** (component `cloudflare-turnstile-settings`). The tab has the options above
+except **Implementation Method**, which belongs to each step.
+
+A step created in the admin console has **Use Realm Settings** turned on: it takes everything from
+the tab except its Implementation Method (the console fills in every field's default, so the step's
+own fields are ignored rather than trusted). Turn the switch off to give a step its own values;
+empty ones then still come from the tab. Steps configured without the switch (in realm JSON, or
+before this version) use their own values the same way. A separate-page step with no configuration
+at all uses the tab. The secret key may be a vault reference such as `${vault.turnstile-secret}`,
+on the tab or on a step.
+
+The tab needs Keycloak's `declarative-ui` feature (`--features=declarative-ui`). Without it, set
+the component through realm JSON:
+
+```json
+"components": {
+  "org.keycloak.services.ui.extend.UiTabProvider": [{
+    "name": "cloudflare-turnstile-settings",
+    "providerId": "cloudflare-turnstile-settings",
+    "config": { "siteKey": ["0x..."], "secretKey": ["${vault.turnstile-secret}"] }
+  }]
+}
+```
+
 ### Widget Modes
 
 - **managed** (default) - Shows interactive challenge when needed, automatic verification for low-risk traffic
@@ -239,7 +275,7 @@ For detailed CSP troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.
 
 - **BLOCK** (default) - Deny authentication when Turnstile verification fails
 - **ALLOW** - Log the failure but allow authentication to proceed (monitoring mode)
-- **REQUIRE_MFA** - Trigger additional MFA requirements when verification fails
+- **REQUIRE_MFA** - Let the sign-in continue, and set the authentication-session note `turnstile_failed` for a later step (for example a condition in front of a second factor) to act on. In the reset-password flow it blocks: nothing could ask for a second factor before the reset email is sent.
 
 ### Fail Modes
 
@@ -256,7 +292,7 @@ You can choose between three implementation approaches:
 
 1. Copy the "Browser" flow
 2. Add **"Cloudflare Turnstile"** execution at the beginning
-3. Configure with your site key and secret key
+3. Leave **Use Realm Settings** on and fill in **Realm settings → Cloudflare Turnstile**, or turn it off and set the site key and secret key on the step
 4. Set as REQUIRED
 5. Bind the flow to your realm's "Browser Flow"
 
@@ -268,11 +304,9 @@ You can choose between three implementation approaches:
 **Option 2: Inline Widget on Login Form (Script Injection)**
 
 1. Copy the "Browser" flow
-2. Expand **"Username Password Form"** or **"Browser - Conditional OTP"** subflow
-3. Click **Add execution** within the subflow
-4. Select **"Cloudflare Turnstile - Login (Script Injection)"**
-5. Set as REQUIRED
-6. Configure with same settings
+2. In its **forms** subflow, add **"Cloudflare Turnstile"** and delete **Username Password Form**: this
+   step shows the theme's sign-in page and checks the username and password itself
+3. Set it as REQUIRED, with Implementation Method `SCRIPT_INJECTION`
 
 **User Experience:**
 - User sees login form with Turnstile widget embedded inline via JavaScript
@@ -287,11 +321,8 @@ You can choose between three implementation approaches:
    - **cloudflare-turnstile-legacy** (for Keycloak 24.x-25.x)
 3. Click **Save**
 4. Copy the "Browser" flow
-5. Expand **"Username Password Form"** or **"Browser - Conditional OTP"** subflow
-6. Click **Add execution** within the subflow
-7. Select **"Cloudflare Turnstile - Login (Custom Theme)"**
-8. Set as REQUIRED
-9. Configure with same settings
+5. In its **forms** subflow, add **"Cloudflare Turnstile"** and delete **Username Password Form**
+6. Set it as REQUIRED, with Implementation Method `CUSTOM_THEME`
 
 **User Experience:**
 - User sees login form with Turnstile widget natively embedded (via theme)
@@ -304,16 +335,16 @@ You can choose between three implementation approaches:
 
 ### Example 2: Registration Protection
 
-You can choose between four implementation approaches:
+You can choose between three implementation approaches:
 
 **Option 1: Separate Verification Page (Recommended)**
 
 1. Go to **Authentication** → **Flows** → **Registration**
 2. Click **Add execution**
-3. Select **"Cloudflare Turnstile (Registration)"**
+3. Select **"Cloudflare Turnstile"** (the authenticator, with Implementation Method `SEPARATE_PAGE`)
 4. Position it **before** "Registration Page Form"
 5. Set as REQUIRED
-6. Configure with same settings as login flow
+6. Leave **Use Realm Settings** on to use the realm tab's keys (or turn it off and set them here)
 
 **User Experience:**
 - User clicks "Register" link
@@ -325,9 +356,9 @@ You can choose between four implementation approaches:
 1. Go to **Authentication** → **Flows** → **Registration**
 2. Expand **"Registration form"** subflow
 3. Click **Add execution** within the subflow
-4. Select **"Cloudflare Turnstile (Script Injection)"**
+4. Select **"Cloudflare Turnstile"** (the form action, with Implementation Method `SCRIPT_INJECTION`)
 5. Set as REQUIRED
-6. Configure with same settings as login flow
+6. Leave **Use Realm Settings** on to use the realm tab's keys (or turn it off and set them here)
 
 **User Experience:**
 - User clicks "Register" link
@@ -345,9 +376,9 @@ You can choose between four implementation approaches:
 4. Go to **Authentication** → **Flows** → **Registration**
 5. Expand **"Registration form"** subflow
 6. Click **Add execution** within the subflow
-7. Select **"Cloudflare Turnstile (Custom Theme)"**
+7. Select **"Cloudflare Turnstile"** (the form action, with Implementation Method `CUSTOM_THEME`)
 8. Set as REQUIRED
-9. Configure with same settings as login flow
+9. Leave **Use Realm Settings** on to use the realm tab's keys (or turn it off and set them here)
 
 **User Experience:**
 - User clicks "Register" link
@@ -359,16 +390,49 @@ You can choose between four implementation approaches:
 
 **See [docs/REGISTRATION.md](docs/REGISTRATION.md) for complete registration guide.**
 
-### Example 3: IP Allowlist for Internal Networks
+### Example 3: Reset-Password Protection
+
+The reset-password ("Forgot your password?") flow is set per realm. Copy the **reset credentials**
+flow, change it as below, and bind it with **Action** → **Bind flow** → **Reset credentials flow**.
+
+**Option 1: Separate Verification Page**
+
+1. Add **Cloudflare Turnstile** first in the flow, before **Choose User**
+2. Set it to REQUIRED, with Implementation Method `SEPARATE_PAGE`
+
+**User Experience:**
+- User clicks "Forgot Password?"
+- A Turnstile page appears, headed "Forgot Your Password?"
+- After verification, Keycloak's reset page asks for the username or email
+
+**Option 2: Inline Widget on the Reset Page (Script Injection)**
+
+1. Add **Cloudflare Turnstile** first in the flow, with Implementation Method `SCRIPT_INJECTION`
+2. Set it to REQUIRED, and **delete Choose User**: this step shows Keycloak's reset page with the
+   widget, then hands the username to Keycloak's own Choose User logic (which finds the account, or
+   quietly doesn't, so usernames can't be probed)
+
+**User Experience:**
+- User clicks "Forgot Password?"
+- Keycloak's reset page appears with the Turnstile widget; the button is enabled once verified
+
+In both options, opening the reset link from the email needs no new check: the signed, single-use
+link already proves who the user is. Events and verification records have the flow type
+`reset-credentials` (`RESET_CREDENTIALS` in the database).
+
+### Example 4: IP Allowlist for Internal Networks
 
 Configure IP Allowlist:
 ```
 192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
 ```
 
-Users from these internal networks will skip Turnstile verification entirely.
+With the default **Allowlist Behavior** (`VERIFY_BUT_ALLOW`), users from these networks still see
+the widget and are checked, but let through whatever the result (the result is recorded). With
+`SKIP_VERIFICATION`, Cloudflare isn't asked at all. Either way, inline sign-ins still need the right
+password.
 
-### Example 4: Suspicious IP Blocklist
+### Example 5: Suspicious IP Blocklist
 
 Configure IP Blocklist:
 ```
@@ -377,13 +441,13 @@ Configure IP Blocklist:
 
 These IPs will be immediately blocked before any verification attempt.
 
-### Example 5: MFA Enforcement on Failure
+### Example 6: MFA Enforcement on Failure
 
-Set **Fail Action** to `REQUIRE_MFA` and add an MFA execution after the Turnstile step. When Turnstile verification fails, users will be required to complete MFA.
+Set **Fail Action** to `REQUIRE_MFA` and put a second factor after the Turnstile step, behind a condition that checks the authentication-session note `turnstile_failed` (Turnstile sets the note; it doesn't ask for the second factor itself).
 
 ## Database Schema
 
-When **Record Verifications** is enabled, verification attempts are stored in the `cloudflare_turnstile_check` table:
+When **Record Verifications** is enabled, verification attempts are stored in the `cloudflare_turnstile_check` table. Sign-ins that Turnstile does not check (passkey sign-ins, pages Keycloak skips because the user is already known) leave no row:
 
 ```sql
 CREATE TABLE cloudflare_turnstile_check (
@@ -440,14 +504,21 @@ The authenticator logs comprehensive event details for security monitoring and a
 
 ### Event Detail Fields
 
-All Turnstile verification attempts log the following fields to Keycloak events:
+All Turnstile verification attempts log the following fields to Keycloak events. Sign-ins that Turnstile does not check (passkey sign-ins, pages Keycloak skips) have no `cloudflare_turnstile_*` details:
 
 #### Basic Verification Fields
 - `cloudflare_turnstile_success` - Verification result: "true" or "false"
 - `cloudflare_turnstile_hostname` - Hostname from Cloudflare response
 - `cloudflare_turnstile_errors` - Comma-separated error codes (if verification failed)
-- `cloudflare_turnstile_flow_type` - Flow type: "login" or "registration"
+- `cloudflare_turnstile_flow_type` - Flow type: "login", "registration" or "reset-credentials"
 - `ip_address` - User's IP address
+
+#### Event errors
+
+A failed check that blocks is recorded with the event error `turnstile_verification_failed`, and a
+Cloudflare error with FAIL_CLOSED with `turnstile_verification_error`, not `invalid_user_credentials`:
+they aren't wrong passwords, so listeners that count those (such as IP throttling) leave them out.
+Turnstile's refusals don't count toward Keycloak's brute-force lockout of an account either.
 
 #### Action and Result Fields
 - `cloudflare_turnstile_action` - Action taken:
@@ -625,7 +696,7 @@ has its own client bound to its own browser flow.
 
 ## Security Considerations
 
-- **Never expose your Secret Key** - It's encrypted in Keycloak's database
+- **Never expose your Secret Key** - Keycloak stores it as entered (masked in the admin console); use a vault reference such as `${vault.turnstile-secret}` to keep it out of the database
 - **Use FAIL_CLOSED in production** - Prevents bypassing Turnstile during outages
 - **Review IP allowlists carefully** - Ensure they don't create security holes
 - **Monitor failed verifications** - High failure rates may indicate attacks

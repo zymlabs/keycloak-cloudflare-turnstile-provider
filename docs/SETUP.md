@@ -89,7 +89,7 @@ After creation, you'll see two keys:
 - ⚠️ Keep this secret!
 - Never commit to version control
 - Used server-side to verify tokens
-- Stored encrypted in Keycloak database
+- Stored as entered in Keycloak's database (use a vault reference such as `${vault.turnstile-secret}` to keep it out)
 
 **Save both keys** - you'll need them later.
 
@@ -404,7 +404,7 @@ If CSP is not working:
 
 ## 5. Configure Theme (Optional - Custom Theme Mode Only)
 
-**Note**: This step is **only required** if you plan to use the **Custom Theme** implementation method. If you're using Separate Page, Script Injection, or Copied Template methods, skip this section.
+**Note**: This step is **only required** if you plan to use the **Custom Theme** implementation method. If you're using Separate Page or Script Injection methods, skip this section.
 
 ### Theme Variants
 
@@ -447,7 +447,6 @@ After saving, the theme will be active immediately for new sessions:
 Skip theme configuration if you're using:
 - **Separate Page** implementation - Uses standalone Turnstile page (theme-independent)
 - **Script Injection** implementation - JavaScript injects widget into any theme
-- **Copied Template** implementation - Uses bundled templates from JAR
 
 These methods work with **any Keycloak theme** and don't require custom theme selection.
 
@@ -514,7 +513,8 @@ This creates a **pre-authentication flow** - Turnstile verifies before username/
 
 ### Alternative: Post-Authentication Flow
 
-To verify AFTER login (less common for Turnstile):
+To verify AFTER login (less common for Turnstile), with Implementation Method `SEPARATE_PAGE` only
+(the inline methods take the place of Username Password Form):
 
 1. Add Turnstile execution INSIDE "Browser with Turnstile Forms" subflow
 2. Place it AFTER "Username Password Form"
@@ -529,6 +529,18 @@ To verify AFTER login (less common for Turnstile):
 3. Configuration dialog opens
 
 ### Step 2: Required Settings
+
+Choose where the keys and the other settings in Steps 3-5 live:
+
+- **Realm settings (set once per realm):** fill in **Realm settings → Cloudflare Turnstile** and
+  leave **Use Realm Settings** on for each step (the admin console turns it on for new steps). Only
+  the step's **Implementation Method** is set on the step; the step ignores its other fields.
+- **On the step:** turn **Use Realm Settings** off and set the keys and settings on the step. Empty
+  values still come from the realm tab.
+
+The realm tab needs Keycloak's `declarative-ui` feature (`--features=declarative-ui` on
+`kc.sh build` or `start`). Without it, set the realm settings through realm JSON or the admin REST
+API; see [CONFIGURATION.md](CONFIGURATION.md#realm-wide-settings).
 
 **Site Key**: Paste your Cloudflare site key
 ```
@@ -557,7 +569,7 @@ To verify AFTER login (less common for Turnstile):
 **Fail Action** (when verification fails):
 - `BLOCK` (recommended) - Deny access
 - `ALLOW` - Log but allow (testing only)
-- `REQUIRE_MFA` - Trigger MFA requirement
+- `REQUIRE_MFA` - Continue, with the auth note `turnstile_failed` for a later step to act on (blocks in the reset-password flow)
 
 **Fail Mode** (when Cloudflare API errors):
 - `FAIL_CLOSED` (recommended) - Deny if API is down
@@ -566,7 +578,7 @@ To verify AFTER login (less common for Turnstile):
 ### Step 5: Optional Settings
 
 **Record Verifications**: `true` (recommended)
-- Stores all verification attempts in database
+- Stores all verification attempts in database (passkey sign-ins are not checked by Turnstile, so they have no row)
 - Enables audit trail and analytics
 
 **IP Allowlist**: (optional)
@@ -584,8 +596,8 @@ To verify AFTER login (less common for Turnstile):
 
 ### Step 6: Save Configuration
 
-1. Click **Save**
-2. Configuration is stored encrypted in Keycloak database
+1. Click **Save** (on the realm tab, the step, or both)
+2. Configuration is stored in Keycloak's database as entered (use a vault reference such as `${vault.turnstile-secret}` for the secret key)
 
 ### Example Production Configuration
 
@@ -792,7 +804,7 @@ For more troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 ## Adding Turnstile to Registration
 
-To protect user registration from bots, you can choose between four implementation approaches:
+To protect user registration from bots, you can choose between three implementation approaches:
 
 ### Option 1: Separate Verification Page (Recommended)
 
@@ -802,7 +814,7 @@ To protect user registration from bots, you can choose between four implementati
 
 2. **Add Turnstile Authenticator**
    - Click **Add execution**
-   - Select **"Cloudflare Turnstile (Registration)"**
+   - Select **"Cloudflare Turnstile"** (the authenticator, with Implementation Method `SEPARATE_PAGE`)
 
 3. **Position Before Registration Form**
    - Drag Turnstile execution to be **before** "Registration Page Form"
@@ -813,7 +825,7 @@ To protect user registration from bots, you can choose between four implementati
 
 5. **Configure Settings**
    - Click **⚙️ Settings** (gear icon)
-   - Enter same configuration as login flow
+   - Leave **Use Realm Settings** on to use the realm tab, or turn it off and enter the same configuration as the login flow
    - Click **Save**
 
 **User Experience:**
@@ -830,14 +842,14 @@ To protect user registration from bots, you can choose between four implementati
 
 2. **Add Script Injection FormAction**
    - Click **Add execution** within the subflow
-   - Select **"Cloudflare Turnstile (Script Injection)"**
+   - Select **"Cloudflare Turnstile"** (the form action, with Implementation Method `SCRIPT_INJECTION`)
 
 3. **Set to REQUIRED**
    - Click Actions menu (⋮) → Select **REQUIRED**
 
 4. **Configure Settings**
    - Click **⚙️ Settings** (gear icon)
-   - Enter same configuration as login flow
+   - Leave **Use Realm Settings** on to use the realm tab, or turn it off and enter the same configuration as the login flow
    - Click **Save**
 
 **User Experience:**
@@ -847,33 +859,7 @@ To protect user registration from bots, you can choose between four implementati
 
 **Note:** Option 2 requires JavaScript enabled and may have CSP compatibility issues.
 
-### Option 3: Copied Template (Native Integration)
-
-1. **Navigate to Registration Flow**
-   - Go to **Authentication** → **Flows**
-   - Find **Registration** flow
-   - Expand **"Registration form"** subflow
-
-2. **Add Copied Template FormAction**
-   - Click **Add execution** within the subflow
-   - Select **"Cloudflare Turnstile (Copied Template)"**
-
-3. **Set to REQUIRED**
-   - Click Actions menu (⋮) → Select **REQUIRED**
-
-4. **Configure Settings**
-   - Click **⚙️ Settings** (gear icon)
-   - Enter same configuration as login flow
-   - Click **Save**
-
-**User Experience:**
-- User clicks "Register" link
-- Registration form appears with Turnstile widget natively embedded
-- User completes form and Turnstile challenge together
-
-**Note:** Option 3 uses a bundled template copy that may need updating when Keycloak updates.
-
-### Option 4: Custom Theme (Standard Keycloak Approach)
+### Option 3: Custom Theme (Standard Keycloak Approach)
 
 1. **Select Turnstile Theme**
    - Go to **Realm Settings** → **Themes**
@@ -887,14 +873,14 @@ To protect user registration from bots, you can choose between four implementati
 
 3. **Add Custom Theme FormAction**
    - Click **Add execution** within the subflow
-   - Select **"Cloudflare Turnstile (Custom Theme)"**
+   - Select **"Cloudflare Turnstile"** (the form action, with Implementation Method `CUSTOM_THEME`)
 
 4. **Set to REQUIRED**
    - Click Actions menu (⋮) → Select **REQUIRED**
 
 5. **Configure Settings**
    - Click **⚙️ Settings** (gear icon)
-   - Enter same configuration as login flow
+   - Leave **Use Realm Settings** on to use the realm tab, or turn it off and enter the same configuration as the login flow
    - Click **Save**
 
 **User Experience:**
@@ -902,7 +888,7 @@ To protect user registration from bots, you can choose between four implementati
 - Registration form appears with Turnstile widget natively embedded (via theme)
 - User completes form and Turnstile challenge together
 
-**Note:** Option 4 requires selecting the "cloudflare-turnstile" theme in Realm Settings. Theme extends base theme.
+**Note:** Option 3 requires selecting the "cloudflare-turnstile" theme in Realm Settings. Theme extends base theme.
 
 ### Detailed Guide
 

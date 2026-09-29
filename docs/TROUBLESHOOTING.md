@@ -437,7 +437,7 @@ curl -X POST "$KEYCLOAK_URL/admin/realms/$REALM/authentication/flows" \
 
 **This is NORMAL**:
 - Password fields don't display saved values for security
-- Value IS saved (encrypted in database)
+- Value IS saved (as entered; use a vault reference to keep it out of the database)
 - To verify: Try authentication, check logs
 
 ## Performance Issues
