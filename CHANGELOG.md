@@ -87,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CloudflareTurnstileScriptInjectionActionFactory
 
 ### Fixed
+- **Admin console errors no longer become server errors.** The theme resource provider returned `null` for message bundles it doesn't ship (such as Keycloak's `admin-messages`), and Keycloak 26.8 merges provider messages without a null check. So while this provider was installed, every admin-console validation error on the server (any realm, any settings page) failed with a `NullPointerException` instead of showing its message. Missing bundles are now empty.
 - Example realm (`examples/realms/turnstile-demo-realm.json`) now includes Keycloak's built-in `browser`, `direct grant`, `registration` and `saml ecp` flows. A realm imported from the old file on Keycloak 24.0.0 or 24.0.1 has no `browser` flow, and Keycloak 26.6.1+ then fails to start when upgrading it (`MigrateTo26_6_1` NullPointerException). Those realms need a `browser` flow added before upgrading; see [Troubleshooting](docs/TROUBLESHOOTING.md#keycloak-fails-to-start-after-upgrading-to-2661-or-later)
 - Documented the `cloudflare-turnstile` theme as Keycloak 26+ (it failed with `Template not found for name "field.ftl"` on 25); use `cloudflare-turnstile-legacy` on 24 and 25
 - Eliminated code duplication between login and registration flows
