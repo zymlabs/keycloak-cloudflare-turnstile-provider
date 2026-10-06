@@ -102,9 +102,10 @@ public class CloudflareTurnstileThemeResourceProvider implements ThemeResourcePr
             }
         }
 
-        // Return null (not empty Properties!) when we don't have messages for this bundle
-        // This allows Keycloak to continue to the next provider in the chain
-        return null;
+        // No messages of this bundle here (e.g. Keycloak's "admin-messages"): an empty set, never
+        // null. Keycloak merges provider messages without a null check, so null fails every request
+        // that loads the bundle, such as the admin console's localized validation errors.
+        return new Properties();
     }
 
     @Override
