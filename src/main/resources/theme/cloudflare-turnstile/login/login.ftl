@@ -7,7 +7,9 @@
 
   Changes from base template:
   - Added Turnstile widget integration for CUSTOM_THEME mode (lines 69-84)
-  - Added turnstileHiddenFields support for SCRIPT_INJECTION mode (lines 64-66)
+  - Added turnstileHiddenFields support for SCRIPT_INJECTION mode
+  - Password field outside the username block, as in the base, so a known account gets a password-only page
+  - No passkeys: passkeys.ftl only exists from later 26.x versions
 -->
 <#import "template.ftl" as layout>
 <#import "field.ftl" as field>
@@ -42,25 +44,26 @@
                             autocomplete="${(enableWebAuthnConditionalUI?has_content)?then('username webauthn', 'username')}"
                             fieldName="username"
                         />
-
-                        <#-- Password field using field.ftl macro -->
-                        <@field.password
-                            name="password"
-                            label=msg("password")
-                            forgotPassword=realm.resetPasswordAllowed
-                            autocomplete="current-password"
-                            fieldName="password"
-                        >
-                            <#-- Remember Me checkbox nested inside password field -->
-                            <#if realm.rememberMe && !usernameHidden??>
-                                <@field.checkbox
-                                    name="rememberMe"
-                                    label=msg("rememberMe")
-                                    value=login.rememberMe??
-                                />
-                            </#if>
-                        </@field.password>
                     </#if>
+
+                    <#-- Password field using field.ftl macro; alone when the account is already known (usernameHidden) -->
+                    <@field.password
+                        name="password"
+                        label=msg("password")
+                        forgotPassword=realm.resetPasswordAllowed
+                        autofocus=usernameHidden??
+                        autocomplete="current-password"
+                        fieldName="password"
+                    >
+                        <#-- Remember Me checkbox nested inside password field -->
+                        <#if realm.rememberMe && !usernameHidden??>
+                            <@field.checkbox
+                                name="rememberMe"
+                                label=msg("rememberMe")
+                                value=login.rememberMe??
+                            />
+                        </#if>
+                    </@field.password>
 
                     <#-- Cloudflare Turnstile Widget - Custom Theme with Multiple Implementation Options -->
                     <#-- Support for Script Injection Mode: Output hidden fields for JavaScript injector -->

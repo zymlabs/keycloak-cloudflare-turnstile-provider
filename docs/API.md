@@ -249,7 +249,7 @@ Keycloak Server
 - Never expose secret key client-side
 - Never commit to version control
 - Rotate periodically (every 90-180 days)
-- Store encrypted (Keycloak does this automatically)
+- Keep it in Keycloak's vault (`${vault.turnstile-secret}`): otherwise Keycloak stores it as entered
 
 ### API Request Security
 

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export const KEYCLOAK_URL = process.env.KEYCLOAK_URL ?? 'http://localhost:8080';
+export const MAILPIT_URL = process.env.MAILPIT_URL ?? 'http://localhost:8025';
 
 export default defineConfig({
   testDir: './tests',

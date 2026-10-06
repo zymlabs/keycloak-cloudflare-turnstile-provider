@@ -9,12 +9,13 @@ const REDIRECT_URI = 'http://e2e.test/callback';
 type Endpoint = 'auth' | 'registrations';
 
 /** Starts an authorization-code flow for a scenario client (each client is bound to its own browser flow). */
-export async function startFlow(page: Page, client: string, endpoint: Endpoint = 'auth') {
+export async function startFlow(page: Page, client: string, endpoint: Endpoint = 'auth', extra: Record<string, string> = {}) {
   const params = new URLSearchParams({
     client_id: `e2e-${client}`,
     redirect_uri: REDIRECT_URI,
     response_type: 'code',
     scope: 'openid',
+    ...extra,
   });
   await page.goto(`/realms/${REALM}/protocol/openid-connect/${endpoint}?${params}`);
 }

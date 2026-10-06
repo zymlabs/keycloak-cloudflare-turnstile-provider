@@ -14,6 +14,13 @@
   },
   "registrationAllowed": true,
   "loginWithEmailAllowed": true,
+  "resetPasswordAllowed": true,
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "keycloak@e2e.test",
+    "fromDisplayName": "Keycloak e2e"
+  },
   "eventsEnabled": true,
   "eventsExpiration": 3600,
   "registrationFlow": "e2e-registration",
@@ -136,6 +143,133 @@
           "authenticatorFlow": false,
           "authenticator": "cloudflare-turnstile-authenticator",
           "authenticatorConfig": "e2e-server-reject"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-allowlisted",
+      "description": "E2E browser flow: allowlisted",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-allowlisted-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-allowlisted-forms",
+      "description": "E2E forms: allowlisted",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-allowlisted"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-realm-settings",
+      "description": "E2E browser flow: realm-settings",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-realm-settings-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-realm-settings-forms",
+      "description": "E2E forms: realm-settings",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-realm-settings"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-username-first",
+      "description": "E2E browser flow: username-first",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-username-first-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-username-first-forms",
+      "description": "E2E forms: Keycloak asks for the username, then Turnstile inline",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-username-form"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-username-first"
         }
       ]
     },
@@ -273,6 +407,288 @@
           "authenticator": "registration-password-action"
         }
       ]
+    },
+    {
+      "alias": "e2e-reset-separate-page",
+      "description": "E2E reset-credentials flow: separate-page",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-reset-separate-page"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "reset-credentials-choose-user"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "reset-credential-email"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 40,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "reset-password"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-reset-script-injection",
+      "description": "E2E reset-credentials flow: script-injection",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-reset-script-injection"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "reset-credential-email"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "reset-password"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-reset-server-reject",
+      "description": "E2E reset-credentials flow: server-reject",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-reset-server-reject"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "reset-credential-email"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "reset-password"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-registration-separate-page",
+      "description": "E2E registration flow: separate-page",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-registration-separate-page"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "authenticator": "registration-page-form",
+          "flowAlias": "e2e-registration-separate-page-form"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-registration-separate-page-form",
+      "description": "E2E registration form without a widget",
+      "providerId": "form-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "registration-user-creation"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "registration-password-action"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-custom-theme-username-first",
+      "description": "E2E browser flow: custom-theme-username-first",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-custom-theme-username-first-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-custom-theme-username-first-forms",
+      "description": "E2E forms: custom-theme-username-first",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-username-form"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-custom-theme-username-first"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-then-deny",
+      "description": "E2E browser flow: then-deny",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-then-deny-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-then-deny-forms",
+      "description": "E2E forms: then-deny",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-then-deny"
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "deny-access-authenticator"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-fail-open",
+      "description": "E2E browser flow: fail-open",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "auth-cookie"
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "flowAlias": "e2e-browser-fail-open-forms"
+        }
+      ]
+    },
+    {
+      "alias": "e2e-browser-fail-open-forms",
+      "description": "E2E forms: fail-open",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "authenticator": "cloudflare-turnstile-authenticator",
+          "authenticatorConfig": "e2e-fail-open"
+        }
+      ]
     }
   ],
   "authenticatorConfig": [
@@ -353,6 +769,64 @@
       }
     },
     {
+      "alias": "e2e-allowlisted",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "2x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "0.0.0.0/0,::/0",
+        "ipBlocklist": "",
+        "allowlistBehavior": "SKIP_VERIFICATION",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-realm-settings",
+      "config": {
+        "useRealmSettings": "true",
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "ALLOW",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-username-first",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
       "alias": "e2e-ip-blocked",
       "config": {
         "siteKey": "1x00000000000000000000AA",
@@ -387,6 +861,139 @@
         "failMode": "FAIL_CLOSED",
         "connectTimeout": "5000",
         "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-reset-separate-page",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SEPARATE_PAGE",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-reset-script-injection",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-reset-server-reject",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "2x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-registration-separate-page",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SEPARATE_PAGE",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-custom-theme-username-first",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "CUSTOM_THEME",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-then-deny",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_CLOSED",
+        "connectTimeout": "5000",
+        "readTimeout": "5000",
+        "enableDebugLogging": "true"
+      }
+    },
+    {
+      "alias": "e2e-fail-open",
+      "config": {
+        "siteKey": "1x00000000000000000000AA",
+        "secretKey": "1x0000000000000000000000000000000AA",
+        "widgetMode": "managed",
+        "widgetTheme": "auto",
+        "implementationMethod": "SCRIPT_INJECTION",
+        "recordVerifications": "true",
+        "ipAllowlist": "",
+        "ipBlocklist": "",
+        "allowlistBehavior": "VERIFY_BUT_ALLOW",
+        "failAction": "BLOCK",
+        "failMode": "FAIL_OPEN",
+        "connectTimeout": "1",
+        "readTimeout": "1",
         "enableDebugLogging": "true"
       }
     }
@@ -453,8 +1060,98 @@
       "protocol": "openid-connect"
     },
     {
+      "clientId": "e2e-allowlisted",
+      "name": "E2E allowlisted",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "e2e-realm-settings",
+      "name": "E2E realm-settings",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "e2e-username-first",
+      "name": "E2E username-first",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
       "clientId": "e2e-ip-blocked",
       "name": "E2E ip-blocked",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "e2e-custom-theme-username-first",
+      "name": "E2E custom-theme-username-first",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "e2e-then-deny",
+      "name": "E2E then-deny",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://e2e.test/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "e2e-fail-open",
+      "name": "E2E fail-open",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
@@ -484,5 +1181,25 @@
         }
       ]
     }
-  ]
+  ],
+  "components": {
+    "org.keycloak.services.ui.extend.UiTabProvider": [
+      {
+        "name": "cloudflare-turnstile-settings",
+        "providerId": "cloudflare-turnstile-settings",
+        "subComponents": {},
+        "config": {
+          "siteKey": [
+            "1x00000000000000000000AA"
+          ],
+          "secretKey": [
+            "2x0000000000000000000000000000000AA"
+          ],
+          "failAction": [
+            "BLOCK"
+          ]
+        }
+      }
+    ]
+  }
 }

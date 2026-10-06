@@ -105,6 +105,56 @@ test.describe('server-side enforcement', () => {
     expect(new URL(page.url()).host).not.toBe('e2e.test');
   });
 
+  test('an allowlisted IP skips verification but still needs the right password', async ({ page }) => {
+    // Every address is allowlisted with SKIP_VERIFICATION; the secret key would fail verification
+    await startFlow(page, 'allowlisted');
+
+    await fillCredentials(page, 'e2e-user', 'wrong-password');
+    await waitForTurnstileToken(page);
+    await page.locator('#kc-login').click();
+    await expect(page.getByText('Invalid username or password.')).toBeVisible();
+
+    await fillCredentials(page);
+    await waitForTurnstileToken(page);
+    await submitAndExpectLoggedIn(page, page.locator('#kc-login'));
+  });
+
+  test('when Cloudflare can\'t be asked, FAIL_OPEN lets sign-ins through but still needs the right password', async ({ page }) => {
+    // This step's timeouts are too short for any answer from Cloudflare
+    await startFlow(page, 'fail-open');
+
+    await fillCredentials(page, 'e2e-user', 'wrong-password');
+    await waitForTurnstileToken(page);
+    await page.locator('#kc-login').click();
+    await expect(page.getByText('Invalid username or password.')).toBeVisible();
+
+    await fillCredentials(page);
+    await waitForTurnstileToken(page);
+    await submitAndExpectLoggedIn(page, page.locator('#kc-login'));
+
+    const token = await adminToken();
+    const events: any[] = await (
+      await fetch(`${KEYCLOAK_URL}/admin/realms/${REALM}/events?type=LOGIN&client=e2e-fail-open&max=1`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    ).json();
+    expect(events[0]?.details).toMatchObject({
+      cloudflare_turnstile_result: 'verification_error_fail_open',
+      cloudflare_turnstile_action_reason: 'Error - FAIL_OPEN',
+    });
+  });
+
+  test('a step that uses the realm settings takes the keys and policies of the realm tab', async ({ page }) => {
+    // The step's own secret key would pass and its failure action would allow;
+    // the realm's secret key fails and its failure action blocks
+    await startFlow(page, 'realm-settings');
+
+    await fillCredentials(page);
+    await waitForTurnstileToken(page);
+    await page.locator('#kc-login').click();
+    await expect(page.getByText('Security verification failed. Please try again.')).toBeVisible();
+  });
+
   test('blocks blocklisted IPs before showing the widget', async ({ page }) => {
     await startFlow(page, 'ip-blocked');
 

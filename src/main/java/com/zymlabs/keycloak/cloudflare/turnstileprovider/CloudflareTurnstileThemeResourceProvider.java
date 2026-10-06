@@ -16,7 +16,7 @@ import java.util.Properties;
  *
  * Provides:
  * - JavaScript for script injection mode (turnstile-injector.js)
- * - FreeMarker templates for copied template mode (login-turnstile.ftl, register-turnstile.ftl)
+ * - FreeMarker templates for the separate pages (turnstile-form.ftl, turnstile-registration-form.ftl)
  *
  * Resources are accessible via: /resources/cloudflare-turnstile-resources/{path}
  */

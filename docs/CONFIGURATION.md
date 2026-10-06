@@ -6,20 +6,22 @@ Complete reference for all configuration options in the Cloudflare Turnstile Key
 
 1. [Content Security Policy](#content-security-policy)
 2. [Authenticator Configuration](#authenticator-configuration)
-2. [Widget Configuration](#widget-configuration)
+3. [Realm-wide Settings](#realm-wide-settings)
+   - [Use Realm Settings](#use-realm-settings)
+4. [Widget Configuration](#widget-configuration)
    - [Widget Mode](#widget-mode)
    - [Widget Theme](#widget-theme)
-3. [IP Filtering](#ip-filtering)
+5. [IP Filtering](#ip-filtering)
    - [IP Allowlist](#ip-allowlist)
    - [IP Blocklist](#ip-blocklist)
-4. [Fail Behavior](#fail-behavior)
+6. [Fail Behavior](#fail-behavior)
    - [Fail Action](#fail-action)
    - [Fail Mode](#fail-mode)
-5. [Database Recording](#database-recording)
-6. [Network Configuration](#network-configuration)
+7. [Database Recording](#database-recording)
+8. [Network Configuration](#network-configuration)
    - [Connection Timeout](#connect-timeout-ms)
    - [Read Timeout](#read-timeout-ms)
-7. [Advanced Scenarios](#advanced-scenarios)
+9. [Advanced Scenarios](#advanced-scenarios)
 
 ## Content Security Policy
 
@@ -220,12 +222,12 @@ For detailed setup instructions, see [SETUP.md](SETUP.md#4-configure-content-sec
 
 ## Authenticator Configuration
 
-All configuration is done through the Keycloak Admin Console under Authentication → Flows → [Your Flow] → Cloudflare Turnstile → Config.
+Settings live in two places: the realm-wide **Realm settings → Cloudflare Turnstile** tab (see [Realm-wide Settings](#realm-wide-settings)), and each flow step under Authentication → Flows → [Your Flow] → Cloudflare Turnstile → Config. With **Use Realm Settings** on (the default for steps created in the admin console), only the Implementation Method is set on the step; everything below comes from the tab.
 
 ### Site Key
 
 **Type**: String
-**Required**: Yes
+**Required**: Yes (on the realm tab or the step)
 **Example**: `0x4AAAAAAA...`
 
 Your Cloudflare Turnstile site key (client-side key). This is the public key displayed on the login page and used to render the Turnstile widget.
@@ -241,7 +243,7 @@ Your Cloudflare Turnstile site key (client-side key). This is the public key dis
 ### Secret Key
 
 **Type**: Password (secret)
-**Required**: Yes
+**Required**: Yes (on the realm tab or the step)
 **Example**: `0x4AAAAAAA...`
 
 Your Cloudflare Turnstile secret key (server-side key). This is used to verify the Turnstile response token with Cloudflare's API.
@@ -252,7 +254,50 @@ Your Cloudflare Turnstile secret key (server-side key). This is used to verify t
 3. Select your site
 4. Copy the "Secret Key"
 
-**Security Note**: This key is stored encrypted in the Keycloak database. Never commit this to version control or share publicly.
+**Security Note**: Keycloak stores this key as entered (the admin console masks it). Use a vault reference such as `${vault.turnstile-secret}` to keep it out of the database. Never commit it to version control or share it publicly.
+
+## Realm-wide Settings
+
+Instead of repeating keys on every flow step, set them once per realm: **Realm settings →
+Cloudflare Turnstile** (component `cloudflare-turnstile-settings`, provider type
+`org.keycloak.services.ui.extend.UiTabProvider`). The tab has every step option except
+**Implementation Method**, which belongs to each step, and **Use Realm Settings**. Invalid Connect
+Timeout or Read Timeout values are refused on save.
+
+### Use Realm Settings
+
+**Type**: Boolean
+**Config key**: `useRealmSettings`
+
+Each flow step (authenticator or registration form action) has this switch:
+
+- **On**: the step takes everything from the tab except its Implementation Method. The admin
+  console turns it on for new steps (the console fills in every field's default, so the step's own
+  fields are ignored rather than trusted).
+- **Off**: the step uses its own values; empty ones still come from the tab.
+- **Absent** (steps configured in realm JSON, or before this version): same as off.
+
+A separate-page step with no configuration at all uses the tab.
+
+### Vault Reference
+
+The secret key may be a vault reference such as `${vault.turnstile-secret}`, on the tab or on a
+step. Keycloak resolves it through its configured vault.
+
+### Without the Admin Console Tab
+
+The tab needs Keycloak's `declarative-ui` feature (`--features=declarative-ui`). Without it, set
+the component through realm JSON or the admin REST API:
+
+```json
+"components": {
+  "org.keycloak.services.ui.extend.UiTabProvider": [{
+    "name": "cloudflare-turnstile-settings",
+    "providerId": "cloudflare-turnstile-settings",
+    "config": { "siteKey": ["0x..."], "secretKey": ["${vault.turnstile-secret}"] }
+  }]
+}
+```
 
 ## Widget Configuration
 
@@ -636,10 +681,9 @@ Turnstile Failed → ⚠️ Warning Logged → ✓ Access Allowed
 Turnstile Failed → 🔐 MFA Required → Continue Authentication
 ```
 
-- User must complete additional MFA step
-- Sets auth note: `turnstile_failed=true`
-- Subsequent authenticators can read this note
-- Allows conditional MFA enforcement
+- Lets the sign-in continue and sets the auth note `turnstile_failed=true`
+- A later step (e.g. a condition in front of a second factor) must act on the note: Turnstile doesn't ask for MFA itself
+- In the reset-password flow it blocks instead: nothing could ask for a second factor before the email is sent
 
 **Use when**:
 - Balanced security approach needed
@@ -742,7 +786,7 @@ Cloudflare API Error → ⚠️ Warning Logged → ✓ Access Allowed
 Whether to store Turnstile verification results in the database for auditing and analytics.
 
 **When Enabled** (default):
-- Every verification attempt is stored in `cloudflare_turnstile_check` table
+- Every verification attempt is stored in `cloudflare_turnstile_check` table (sign-ins Turnstile does not check, such as passkeys, have no row)
 - Includes: IP, timestamp, success/failure, error codes, session info
 - Available for SQL queries and reporting
 - Enables historical analysis
@@ -982,7 +1026,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 ```
 
 **Result**:
-- All verifications recorded to database
+- All Turnstile checks recorded to database
 - Failures logged but don't block
 - Can analyze data before enforcing
 - **Switch to BLOCK after testing phase**
@@ -1050,7 +1094,7 @@ When **Record Verifications** is enabled, the provider maintains comprehensive a
 
 #### What Gets Audited
 
-Every verification attempt records:
+Every verification attempt records the following. Sign-ins that Turnstile does not check (passkey sign-ins, pages Keycloak skips) leave no record or event details; see [AUDIT.md](AUDIT.md#what-is-not-tracked).
 - **Configuration Snapshot** - Active fail_mode, fail_action, allowlist_behavior, and implementation_method settings
 - **Decision Trail** - Whether IP was allowlisted/blocklisted, whether verification was skipped
 - **Final Outcome** - Whether authentication was allowed and why

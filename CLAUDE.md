@@ -22,6 +22,8 @@ com.zymlabs.keycloak.cloudflare.turnstileprovider/
 ├── CloudflareTurnstileCheckEntity.java             - JPA entity for audit logs
 ├── CloudflareTurnstileJpaEntityProvider.java       - JPA provider
 ├── CloudflareTurnstileJpaEntityProviderFactory.java - JPA factory
+├── CloudflareTurnstileRealmSettings.java           - Realm-wide settings + effective settings of a step
+├── CloudflareTurnstileRealmSettingsTab.java        - "Cloudflare Turnstile" tab in Realm settings (declarative UI)
 └── IpAddressUtils.java                             - IP/CIDR matching utilities
 ```
 
@@ -30,7 +32,7 @@ com.zymlabs.keycloak.cloudflare.turnstileprovider/
 1. **Singleton Authenticator**: Factory returns a singleton authenticator instance (stateless)
 2. **SPI Integration**: Uses Keycloak SPI for `AuthenticatorFactory` and `JpaEntityProviderFactory`
 3. **Configuration via Factory**: All config properties defined in `AuthenticatorFactory.getConfigProperties()`
-4. **Pre-authentication Mode**: `requiresUser()` returns false - runs before credentials
+4. **No user required**: `requiresUser()` returns false - runs before credentials (separate page), or is the credentials form itself (inline)
 5. **Optional Database Persistence**: Configurable via `recordVerifications` setting
 
 ### Authentication Flow
@@ -47,15 +49,52 @@ com.zymlabs.keycloak.cloudflare.turnstileprovider/
 7. Based on result and configuration, either:
    - Success: `context.success()`
    - Failure + BLOCK: `context.failure()`
-   - Failure + ALLOW: `context.success()` with warning
-   - Failure + REQUIRE_MFA: `context.success()` with auth note
+   - Failure + ALLOW: continue with a warning (inline, Keycloak's form continues once the password is right)
+   - Failure + REQUIRE_MFA: `context.success()` with auth note `turnstile_failed` (`FAILED_NOTE`); BLOCK in the reset flow
+   - Event errors for failed checks and Cloudflare errors are `turnstile_verification_failed` and
+     `turnstile_verification_error`, kept apart from wrong passwords
+
+### Flows
+
+The authenticator knows its flow from `context.getFlowPath()` (`authenticate`, `registration`,
+`reset-credentials`):
+
+- **Sign-in:** inline, this step stands in for Keycloak's username/password form and delegates to
+  Keycloak's own step (`keycloakStep()`, provider `auth-username-password-form`): it builds the page
+  (login_hint, remembered username, preset user, passkeys) and, once Turnstile lets an attempt
+  through, takes the submission (`submittedToKeycloakForm()` returns whether Keycloak accepted it;
+  only then is the attempt audited as allowed). Passkey submissions (`isPasskeySubmission()`:
+  WebAuthn fields, empty username and password) skip the Turnstile check, through a context whose
+  refusals don't count toward brute-force lockout (`withoutLockoutCounting()`). The class still
+  extends `AbstractUsernameFormAuthenticator`: inline, that marks it as a form keeping to an account
+  set earlier in the flow, which other extensions (e.g. an IP throttle's known-device path) rely on.
+  Its inherited form helpers are deliberately unused (they would skip the widget).
+- **Refusals** (`refuse()`) use `forceChallenge`, never `failure`/`failureChallenge`: Keycloak counts
+  those toward brute-force lockout, and a Turnstile refusal is no wrong password. The step's
+  reference category is `password`, because Keycloak 26.5+ counts failed sign-ins only for steps of
+  the password, OTP and recovery-code categories.
+- **Registration:** always the separate page; inline widgets come from `CloudflareTurnstileFormAction`.
+- **Reset password:** the separate page goes before Keycloak's Choose User step. Inline, this step
+  replaces Choose User and delegates to Keycloak's provider for it (so its account lookup,
+  anti-enumeration and page-skipping stay Keycloak's). Both delegations go through a context whose
+  `form()` adds the widget to the page Keycloak's step builds (`withWidgetOnItsPage()`). Scripts must never be added to the request's shared form
+  provider up front: Keycloak renders the next flow's page in the same response (e.g. the sign-in
+  page after the reset email), which would get them too. The separate page is skipped when an
+  emailed reset link identified the user.
+
+### Realm settings
+
+`CloudflareTurnstileRealmSettings.effective()` merges the realm tab with a step's configuration. A
+step with `useRealmSettings=true` (the admin console's default for new steps, because the console
+saves every field's default) takes everything but its implementation method from the realm. Without
+it (older configurations, realm JSON), the step's non-empty values win.
 
 ### Configuration Keys
 
 All configuration is stored in Keycloak's database and accessed via `AuthenticatorConfigModel`:
 
 - `siteKey` - Cloudflare site key (client-side)
-- `secretKey` - Cloudflare secret key (server-side, encrypted)
+- `secretKey` - Cloudflare secret key (server-side; stored as entered unless it is a vault reference)
 - `implementationMethod` - SEPARATE_PAGE | SCRIPT_INJECTION | CUSTOM_THEME (UI label: "Implementation Method")
 - `widgetMode` - managed | non-interactive | invisible
 - `widgetTheme` - light | dark | auto
@@ -336,7 +375,7 @@ Test framework: JUnit 5 + AssertJ + Mockito; Playwright for e2e
 
 ## Security Notes
 
-- Secret key stored encrypted in Keycloak database
+- Secret key stored as entered in Keycloak's database unless it is a vault reference (`${vault.…}`)
 - IP blocklist checked before any processing
 - FAIL_CLOSED prevents bypass during outages
 - All verification attempts logged to events
