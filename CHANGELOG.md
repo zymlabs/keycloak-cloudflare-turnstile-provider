@@ -50,6 +50,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   username/password form.
 
 ### Fixed
+- **`SCRIPT_INJECTION` with themes that render the form with JavaScript** (React, Keycloakify): such
+  themes add the page's scripts themselves, so they run in whatever order they load, and render the
+  form when they are ready. The injector gave up when it ran before its settings (`config.js`) or
+  before the form, so the page had no widget and every attempt posted no token (with
+  `REQUIRE_MFA`, every sign-in then got the step-up). The cached injector made this likely on any
+  page after the first. It now waits for the settings and the form (up to 30 seconds), puts the
+  widget back if a re-render removes it (once per form, the old widget removed from Turnstile), and
+  keeps the submit button disabled until there is a token, also when the theme enables or disables
+  the button itself. The widget is rendered explicitly (`turnstile.render`) inside the form, so its
+  token is posted with it. Server-rendered (FreeMarker) themes behave as before.
+- The injector's URL carries a version of its content (`?v=`), so browsers fetch a new injector at
+  once instead of keeping the previous one for a day.
 - `FAIL_OPEN` and `FAIL_CLOSED` never applied to Cloudflare outages: network errors, timeouts and
   unreadable answers were reported as failed checks (`network-error`), so the verification failure
   action applied instead (BLOCK by default). They are now verification errors, handled by the error

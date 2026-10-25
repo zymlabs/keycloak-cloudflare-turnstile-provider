@@ -155,7 +155,9 @@ The theme variant you choose only affects **CUSTOM_THEME** mode. Other implement
 
 **How it works**:
 - JavaScript automatically detects form and injects Turnstile widget
-- Works with base, keycloak, keycloak.v2, or any custom theme
+- Works with base, keycloak, keycloak.v2, or any custom theme, including themes that render the
+  form with JavaScript (React, Keycloakify): it waits for the form and puts the widget back after
+  a re-render
 - Adapts to form structure via DOM manipulation
 - Uses shared `turnstile-injector.js` from common resources
 

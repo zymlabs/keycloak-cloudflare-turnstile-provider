@@ -28,7 +28,7 @@ Add Cloudflare Turnstile verification to your authentication flow using any of t
 
 **Available Authenticator:** **Cloudflare Turnstile**, with an Implementation Method of
 - `SEPARATE_PAGE` ⭐ - Recommended: its own page before the sign-in form
-- `SCRIPT_INJECTION`: the widget on Keycloak's own sign-in page (this step replaces Username Password Form and runs it, so `login_hint`, remembered usernames and passkeys keep working)
+- `SCRIPT_INJECTION`: the widget on Keycloak's own sign-in page (this step replaces Username Password Form and runs it, so `login_hint`, remembered usernames and passkeys keep working), with any theme, including themes that render the form with JavaScript (React, Keycloakify)
 - `CUSTOM_THEME`: the widget rendered by the bundled theme (this step replaces Username Password Form; the bundled theme offers no passkeys)
 
 See [Usage Examples - Login Protection](#example-1-login-protection) for detailed setup instructions.
@@ -664,7 +664,10 @@ npx playwright test
 Setup imports a dedicated `turnstile-e2e` realm (`e2e/realms/turnstile-e2e-realm.json`) through
 the admin API on each run, so it starts clean and doesn't touch the demo realm. Each scenario
 (script injection, separate page, custom theme, server-side rejection, IP blocklist, registration)
-has its own client bound to its own browser flow.
+has its own client bound to its own browser flow. `tests/injector.spec.ts` tests the script-injection
+injector on pages of its own with a stand-in for Cloudflare's API (late and re-rendered forms,
+themes that manage the submit button), and `tests/js-rendered-theme.spec.ts` serves Keycloak's pages
+as a theme that renders the form with JavaScript would.
 
 ## Troubleshooting
 

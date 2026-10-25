@@ -9,10 +9,13 @@ import org.keycloak.models.UserModel;
 
 import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.core.UriInfo;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Map;
 
 /**
@@ -481,7 +484,8 @@ public class CloudflareTurnstileHelper {
     }
 
     /**
-     * Builds the URL for the Turnstile injector JavaScript file.
+     * Builds the URL for the Turnstile injector JavaScript file. Browsers cache the file for a day,
+     * so the URL carries a version of its content ({@code ?v=}): a changed injector is fetched anew.
      *
      * @param uriInfo the UriInfo from the request context
      * @param realmName the realm name
@@ -490,7 +494,29 @@ public class CloudflareTurnstileHelper {
      */
     public static String buildInjectorJsUrl(UriInfo uriInfo, String realmName, String providerId) {
         String contextPath = getContextPath(uriInfo);
-        return String.format("%s/realms/%s/%s/resources/js/turnstile-injector.js",
-                contextPath, realmName, providerId);
+        return String.format("%s/realms/%s/%s/resources/js/turnstile-injector.js?v=%s",
+                contextPath, realmName, providerId, InjectorVersion.VALUE);
+    }
+
+    /** A short hash of the injector script, computed once. */
+    static final class InjectorVersion {
+        static final String VALUE = compute();
+
+        private InjectorVersion() {
+        }
+
+        private static String compute() {
+            try (InputStream in = CloudflareTurnstileHelper.class.getClassLoader()
+                    .getResourceAsStream("theme-resources/js/turnstile-injector.js")) {
+                if (in == null) {
+                    return "0";
+                }
+                byte[] digest = MessageDigest.getInstance("SHA-256").digest(in.readAllBytes());
+                return HexFormat.of().formatHex(digest, 0, 6);
+            } catch (Exception e) {
+                logger.debug("Could not hash turnstile-injector.js", e);
+                return "0";
+            }
+        }
     }
 }

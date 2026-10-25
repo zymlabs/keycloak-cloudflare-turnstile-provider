@@ -101,13 +101,21 @@ public class CloudflareTurnstileResourceProvider implements RealmResourceProvide
                     .build();
         }
 
+        return Response.ok(configScript(siteKey, mode, theme, debug))
+                .header("Content-Type", "application/javascript; charset=UTF-8")
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Don't cache config
+                .build();
+    }
+
+    /** The config.js script: sets the widget settings as global variables. */
+    static String configScript(String siteKey, String mode, String theme, String debug) {
         // Use defaults if not specified
         String widgetMode = (mode != null && !mode.trim().isEmpty()) ? mode : "managed";
         String widgetTheme = (theme != null && !theme.trim().isEmpty()) ? theme : "auto";
         boolean enableDebugLogging = "true".equalsIgnoreCase(debug);
 
         // Generate JavaScript that sets global variables
-        String configScript = String.format(
+        return String.format(
                 "// Cloudflare Turnstile Configuration (Auto-generated)\n" +
                 "window.TURNSTILE_DEBUG_LOGGING = %s;\n" +
                 "window.TURNSTILE_CONFIG = window.TURNSTILE_CONFIG || {};\n" +
@@ -115,23 +123,20 @@ public class CloudflareTurnstileResourceProvider implements RealmResourceProvide
                 "window.TURNSTILE_CONFIG.siteKey = %s;\n" +
                 "window.TURNSTILE_CONFIG.mode = %s;\n" +
                 "window.TURNSTILE_CONFIG.theme = %s;\n" +
-                (enableDebugLogging ? "console.log('[Turnstile Config] Configuration loaded:', window.TURNSTILE_CONFIG);\n" : ""),
+                (enableDebugLogging ? "console.log('[Turnstile Config] Configuration loaded:', window.TURNSTILE_CONFIG);\n" : "") +
+                // Tells an injector that ran first: themes that add these scripts with JavaScript run them in any order
+                "document.dispatchEvent(new Event('cloudflare-turnstile:config'));\n",
                 enableDebugLogging ? "true" : "false",
                 escapeJavaScriptString(siteKey),
                 escapeJavaScriptString(widgetMode),
                 escapeJavaScriptString(widgetTheme)
         );
-
-        return Response.ok(configScript)
-                .header("Content-Type", "application/javascript; charset=UTF-8")
-                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Don't cache config
-                .build();
     }
 
     /**
      * Escapes a string for safe use in JavaScript string literals.
      */
-    private String escapeJavaScriptString(String input) {
+    private static String escapeJavaScriptString(String input) {
         if (input == null) {
             return "null";
         }
