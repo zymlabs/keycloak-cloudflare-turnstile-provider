@@ -1,5 +1,5 @@
 import { expect, Page } from '@playwright/test';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { adminToken } from '../global-setup';
 import { KEYCLOAK_URL } from '../playwright.config';
@@ -74,7 +74,9 @@ export async function shot(page: Page, folder: string, name: string, entry: { se
   await page.mouse.move(0, 0);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.waitForTimeout(500);
-  await page.screenshot({ path, animations: 'disabled', caret: 'hide' });
+  const taken = await page.screenshot({ animations: 'disabled', caret: 'hide' });
+  // Keep the committed image when the new one differs only by rendering noise
+  if (!existsSync(path) || !(await nearlySame(page, readFileSync(path), taken))) writeFileSync(path, taken);
   const png = readFileSync(path);
   const file = relative(REPO, path).split('\\').join('/');
   const device = (page.viewportSize()?.width ?? 1280) <= 500 ? 'phone' : 'desktop';
@@ -86,12 +88,55 @@ export async function shot(page: Page, folder: string, name: string, entry: { se
 }
 
 /**
+ * Whether two screenshots show the same thing. Chromium can render the same page a shade
+ * differently on another machine (a few background pixels, off by one or two levels), which would
+ * otherwise show up as a changed image on every run: images of the same size whose pixels differ by
+ * at most a few levels, in at most 1% of the pixels, count as the same. Decoded in a blank page, as
+ * a canvas reads them, so no image library is needed.
+ */
+async function nearlySame(page: Page, before: Buffer, after: Buffer): Promise<boolean> {
+  if (before.readUInt32BE(16) !== after.readUInt32BE(16) || before.readUInt32BE(20) !== after.readUInt32BE(20)) return false;
+  const scratch = await page.context().newPage();
+  try {
+    return await scratch.evaluate(async ([a, b]) => {
+      const pixels = async (base64: string) => {
+        const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${base64}`)).blob(), {
+          colorSpaceConversion: 'none', premultiplyAlpha: 'none',
+        });
+        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+        const context = canvas.getContext('2d')!;
+        context.drawImage(bitmap, 0, 0);
+        return context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+      };
+      const [x, y] = [await pixels(a), await pixels(b)];
+      let differing = 0;
+      for (let i = 0; i < x.length; i += 4) {
+        const most = Math.max(Math.abs(x[i] - y[i]), Math.abs(x[i + 1] - y[i + 1]), Math.abs(x[i + 2] - y[i + 2]), Math.abs(x[i + 3] - y[i + 3]));
+        if (most > 4) return false;
+        if (most) differing++;
+      }
+      return differing <= x.length / 4 / 100;
+    }, [before.toString('base64'), after.toString('base64')]);
+  } finally {
+    await scratch.close();
+  }
+}
+
+/**
  * Writes docs/images/manifest.json (every screenshot, by section, in the order taken) and the
  * gallery, docs/screens.md. A run of only some tests replaces the shots it retook and keeps the rest.
+ * With DOCS_SCREENS_FRESH set (CI), the run is the whole set: images it didn't take are removed.
  */
 export function writeManifest() {
   const path = join(IMAGES, 'manifest.json');
-  const kept: Entry[] = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : [];
+  if (process.env.DOCS_SCREENS_FRESH) {
+    const taken = new Set(entries.map((e) => e.file));
+    for (const file of readdirSync(IMAGES, { recursive: true }) as string[]) {
+      const relativePath = `docs/images/${file.split('\\').join('/')}`;
+      if (relativePath.endsWith('.png') && !taken.has(relativePath)) rmSync(join(IMAGES, file));
+    }
+  }
+  const kept: Entry[] = existsSync(path) && !process.env.DOCS_SCREENS_FRESH ? JSON.parse(readFileSync(path, 'utf8')) : [];
   const retaken = new Map(entries.map((e) => [e.file, e]));
   const merged = [
     ...kept.map((e) => retaken.get(e.file) ?? e),

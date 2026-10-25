@@ -216,8 +216,11 @@ npm run docs-screens -- -g "registration"  # only some tests: the others' shots 
 
 Shots are the same from run to run: the realm is rebuilt each run, the widget runs on Cloudflare's
 test site keys (always pass, always fail, interactive), the admin console runs on a fixed clock,
-and the event list's times, ids and visitor address are replaced with fixed values. The widget
-itself is Cloudflare's, so a change Cloudflare makes to it shows up as changed shots.
+and the event list's times, ids and visitor address are replaced with fixed values. Chromium can
+still render a few background pixels a shade differently on another machine, so a new shot that
+differs from the committed image only by such noise (at most a few levels, in at most 1% of the
+pixels) keeps the committed bytes. The widget itself is Cloudflare's, so a change Cloudflare makes
+to it shows up as changed shots.
 
 Fonts and anti-aliasing differ between machines, so the committed images come from CI. The
 [Docs screenshots workflow](.github/workflows/docs-screenshots.yml) retakes them in the pinned

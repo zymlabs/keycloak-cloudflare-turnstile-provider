@@ -63,12 +63,13 @@ jobs:
         run: docker compose up -d --wait --wait-timeout 300 keycloak
 
       # In the pinned Playwright image, on the host's network so it reaches the stack on localhost.
-      # From scratch, so screens the spec no longer takes don't linger in the manifest.
+      # The committed images are the baseline: a shot that differs from its image only by rendering
+      # noise keeps the committed bytes. DOCS_SCREENS_FRESH makes the run the whole set, so the
+      # manifest is rebuilt and images of screens the spec no longer takes are removed.
       - name: Capture the screenshots
         run: |
-          rm -rf docs/images docs/screens.md
           docker run --rm --network host --ipc=host \
-            -e CI=true \
+            -e CI=true -e DOCS_SCREENS_FRESH=1 \
             -v "$GITHUB_WORKSPACE:/work" -w /work/e2e \
             "$PLAYWRIGHT_IMAGE" \
             sh -c 'npm ci && npm run docs-screens'
