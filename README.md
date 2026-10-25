@@ -644,6 +644,10 @@ docker compose up -d
 KEYCLOAK_VERSION=24.0.0 docker compose up -d
 ```
 
+The host ports can be moved, e.g. next to other stacks, with `KC_HTTP_PORT`, `KC_DEBUG_PORT`,
+`POSTGRES_PORT` and `MAILPIT_UI_PORT` in the environment or a `.env` file (the e2e tests read the
+same `.env`).
+
 ### End-to-End Tests (Playwright)
 
 The `e2e/` directory contains Playwright tests that drive real login and registration flows in a

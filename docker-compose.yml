@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: keycloak
 
     ports:
-      - 5432:5432
+      - "${POSTGRES_PORT:-5432}:5432"
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
@@ -48,9 +48,11 @@ services:
       # DEBUG_SUSPEND: 'y' # Wait for debugger to connect before starting Keycloak
       DEBUG_PORT: '*:5005'
 
+    # Host ports can be moved with KC_HTTP_PORT, KC_DEBUG_PORT, POSTGRES_PORT and MAILPIT_UI_PORT
+    # (e.g. in .env), so the stack can run next to others
     ports:
-      - 8080:8080   # HTTP
-      - 5005:5005   # Debug port
+      - "${KC_HTTP_PORT:-8080}:8080"   # HTTP
+      - "${KC_DEBUG_PORT:-5005}:5005"  # Debug port
 
     depends_on:
       postgres:
