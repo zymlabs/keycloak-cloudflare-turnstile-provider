@@ -48,6 +48,14 @@ psql -d keycloak -c "SELECT success, error_codes, timestamp FROM cloudflare_turn
    - Check: Realm Settings → Login → Browser Flow
    - Fix: Select "Browser with Turnstile" flow
 
+5. **A theme that renders with JavaScript doesn't add the page's scripts** (`SCRIPT_INJECTION`)
+   - The injector and its settings (`.../cloudflare-turnstile/config.js`) come in the scripts
+     Keycloak lists for the page; a theme that builds the page itself must add them
+     (Keycloakify's `Template` does, from `kcContext.scripts`)
+   - Check: the page has `<script>` tags for `config.js` and `turnstile-injector.js`; with
+     **Enable Debug Logging** on, the console shows `[Turnstile]` messages
+   - The injector waits up to 30 seconds for the form; a form rendered later gets no widget
+
 **Debug Steps**:
 ```javascript
 // Open browser console (F12)

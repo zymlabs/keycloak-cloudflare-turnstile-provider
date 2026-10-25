@@ -82,6 +82,14 @@ The authenticator knows its flow from `context.getFlowPath()` (`authenticate`, `
   page after the reset email), which would get them too. The separate page is skipped when an
   emailed reset link identified the user.
 
+### Script injection
+
+`turnstile-injector.js` (served with a content hash in its URL, `?v=`, as browsers cache it for a day) reads the
+settings `config.js` sets (`window.TURNSTILE_CONFIG`; `config.js` then fires `cloudflare-turnstile:config`). Themes that
+render with JavaScript add both scripts themselves, in any order, and render the form later: the injector waits for the
+settings and the form (MutationObserver, 30 s), renders the widget explicitly into a container inside the form, puts it
+back after a re-render, and only enables a submit button it disabled itself.
+
 ### Realm settings
 
 `CloudflareTurnstileRealmSettings.effective()` merges the realm tab with a step's configuration. A
@@ -363,6 +371,8 @@ List<CloudflareTurnstileCheckEntity> loginChecks = em
   - The `turnstile-e2e` realm (`e2e/realms/turnstile-e2e-realm.json`) is re-imported by `global-setup.ts`, which binds one client per scenario to its browser flow
   - Uses Cloudflare test keys (`1x…AA` passes, secret `2x…AA` always fails server-side); needs internet access
   - The realm must allow `https://challenges.cloudflare.com` in its CSP (`frame-src`, `script-src`) or the widget renders blank
+  - `tests/injector.spec.ts` tests `turnstile-injector.js` alone (pages served by Playwright, a stand-in Turnstile API);
+    `tests/js-rendered-theme.spec.ts` rewrites Keycloak's pages to render the form late, like React/Keycloakify themes
 
 Test framework: JUnit 5 + AssertJ + Mockito; Playwright for e2e
 

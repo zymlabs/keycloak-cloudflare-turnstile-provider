@@ -492,7 +492,16 @@ Your custom theme code supports **two implementation methods**:
 **What it does**:
 - JavaScript automatically injects widget into existing forms
 - No template modification required
-- Works with any theme
+- Works with any theme, including themes that render the form with JavaScript (React, Keycloakify)
+
+**Themes that render with JavaScript**: the injector waits for the form (up to 30 seconds) and for
+its settings, which such themes may load after it, puts the widget back if a re-render removes it,
+and keeps the submit button disabled until Turnstile has issued a token, also when the theme
+enables or disables the button itself. The theme only has to add the scripts Keycloak lists for the
+page (`scripts` in FreeMarker, `kcContext.scripts` in Keycloakify, whose `Template` adds them), as
+it would for any other Keycloak feature. The token is posted from a hidden input inside the widget,
+inside the form, so the form must be submitted by the browser (or include that input if the theme
+posts the form with JavaScript).
 
 **When to use**:
 - You can't modify theme templates
