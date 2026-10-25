@@ -654,7 +654,7 @@ class CloudflareTurnstileHelperTest {
 
         String url = CloudflareTurnstileHelper.buildInjectorJsUrl(uriInfo, "myrealm", "cloudflare-turnstile");
 
-        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js");
+        assertThat(url).matches("\\Q/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js?v=\\E[0-9a-f]{12}");
     }
 
     @Test
@@ -665,7 +665,7 @@ class CloudflareTurnstileHelperTest {
 
         String url = CloudflareTurnstileHelper.buildInjectorJsUrl(uriInfo, "myrealm", "cloudflare-turnstile");
 
-        assertThat(url).isEqualTo("/auth/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js");
+        assertThat(url).matches("\\Q/auth/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js?v=\\E[0-9a-f]{12}");
     }
 
     @Test
@@ -673,7 +673,7 @@ class CloudflareTurnstileHelperTest {
     void testBuildInjectorJsUrl_NullUriInfo() {
         String url = CloudflareTurnstileHelper.buildInjectorJsUrl(null, "myrealm", "cloudflare-turnstile");
 
-        assertThat(url).isEqualTo("/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js");
+        assertThat(url).matches("\\Q/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js?v=\\E[0-9a-f]{12}");
     }
 
     @Test
@@ -684,6 +684,16 @@ class CloudflareTurnstileHelperTest {
 
         String url = CloudflareTurnstileHelper.buildInjectorJsUrl(uriInfo, "myrealm", "cloudflare-turnstile");
 
-        assertThat(url).isEqualTo("/keycloak/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js");
+        assertThat(url).matches("\\Q/keycloak/realms/myrealm/cloudflare-turnstile/resources/js/turnstile-injector.js?v=\\E[0-9a-f]{12}");
+    }
+
+    @Test
+    @DisplayName("buildInjectorJsUrl versions the script by its content, so a changed injector isn't served from the browser cache")
+    void testBuildInjectorJsUrl_VersionedByContent() {
+        String version = CloudflareTurnstileHelper.InjectorVersion.VALUE;
+
+        assertThat(version).matches("[0-9a-f]{12}");
+        assertThat(CloudflareTurnstileHelper.buildInjectorJsUrl(null, "myrealm", "cloudflare-turnstile"))
+                .endsWith("turnstile-injector.js?v=" + version);
     }
 }
