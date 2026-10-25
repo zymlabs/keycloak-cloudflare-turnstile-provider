@@ -5,7 +5,8 @@
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "docs-screens": "DOCS_SCREENS=1 playwright test --project=docs-screens"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

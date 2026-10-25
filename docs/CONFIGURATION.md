@@ -264,6 +264,8 @@ Cloudflare Turnstile** (component `cloudflare-turnstile-settings`, provider type
 **Implementation Method**, which belongs to each step, and **Use Realm Settings**. Invalid Connect
 Timeout or Read Timeout values are refused on save.
 
+![Realm-wide settings](images/admin-console/realm-settings.png)
+
 ### Use Realm Settings
 
 **Type**: Boolean

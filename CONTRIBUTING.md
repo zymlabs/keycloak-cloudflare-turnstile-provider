@@ -198,6 +198,43 @@ For integration testing with real Cloudflare Turnstile:
    mvn verify -P integration-tests
    ```
 
+## Docs screenshots
+
+The screenshots in `docs/images/` (listed in `docs/images/manifest.json` and shown in the
+[`docs/screens.md`](docs/screens.md) gallery) are generated, not hand-made: the `docs-screens`
+Playwright project (`e2e/docs/screens.spec.ts`) builds a demo realm ("Northwind", neutral names,
+Cloudflare's test keys) and takes each shot in Keycloak's default theme. Don't edit the images or
+`docs/screens.md` by hand; change the spec and retake them.
+
+```bash
+mvn package -DskipTests
+docker compose up -d --wait keycloak
+cd e2e && npm ci && npx playwright install chromium
+npm run docs-screens                       # every shot
+npm run docs-screens -- -g "registration"  # only some tests: the others' shots are kept
+```
+
+Shots are the same from run to run: the realm is rebuilt each run, the widget runs on Cloudflare's
+test site keys (always pass, always fail, interactive), the admin console runs on a fixed clock,
+and the event list's times, ids and visitor address are replaced with fixed values. The widget
+itself is Cloudflare's, so a change Cloudflare makes to it shows up as changed shots.
+
+Fonts and anti-aliasing differ between machines, so the committed images come from CI. The
+[Docs screenshots workflow](.github/workflows/docs-screenshots.yml) retakes them in the pinned
+Playwright image (`mcr.microsoft.com/playwright`, the version in `e2e/package-lock.json`):
+
+- **Push to `develop`** touching the provider, the stack or the spec, or **run it by hand**
+  (Actions > Docs screenshots > Run workflow, on `develop`): captures, uploads the
+  `docs-screenshots` artifact and, when the images changed, force-pushes them to
+  `chore/docs-screenshots-update` (rebuilt from `develop`) and opens or updates one PR to
+  `develop`, `docs(screens): retake the docs screenshots`. Review the image diff and merge it.
+  The PR is opened with `GITHUB_TOKEN`, so CI doesn't run on it by itself: close and reopen it to
+  run CI.
+- **Pull requests** that change the workflow or `e2e/docs/`: capture only, so you can download
+  the artifact and look at the result before merging.
+
+When you bump `@playwright/test`, bump the image tag in the workflow to the same version.
+
 ## Building and Packaging
 
 ### Build JAR

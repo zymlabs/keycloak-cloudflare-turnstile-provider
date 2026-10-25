@@ -1,0 +1,164 @@
+[
+  {
+    "section": "Sign-in",
+    "title": "Widget on the sign-in form",
+    "caption": "Script injection: the widget on Keycloak's own sign-in form. Sign In is enabled once Turnstile has a token.",
+    "device": "desktop",
+    "file": "docs/images/sign-in/inline-widget.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Sign-in",
+    "title": "Separate verification page",
+    "caption": "Separate page: Turnstile on a page of its own, before Keycloak's sign-in form.",
+    "device": "desktop",
+    "file": "docs/images/sign-in/separate-page.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Sign-in",
+    "title": "Bundled login theme",
+    "caption": "Custom theme: the cloudflare-turnstile login theme renders the widget itself, without script injection.",
+    "device": "desktop",
+    "file": "docs/images/sign-in/custom-theme.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Sign-in",
+    "title": "Interactive challenge",
+    "caption": "When Cloudflare wants a click, the widget asks for one; Sign In stays disabled until the visitor passes.",
+    "device": "desktop",
+    "file": "docs/images/sign-in/interactive-challenge.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Sign-in",
+    "title": "On a phone",
+    "caption": "The sign-in form with the widget on a phone.",
+    "device": "phone",
+    "file": "docs/images/sign-in/phone.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "section": "Registration",
+    "title": "Widget on the registration form",
+    "caption": "The registration form action puts the widget on Keycloak's registration form.",
+    "device": "desktop",
+    "file": "docs/images/registration/inline-widget.png",
+    "width": 1280,
+    "height": 1088
+  },
+  {
+    "section": "Registration",
+    "title": "Separate verification page",
+    "caption": "Separate page: Turnstile before the registration form, which then has no widget.",
+    "device": "desktop",
+    "file": "docs/images/registration/separate-page.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Password reset",
+    "title": "Widget on the reset page",
+    "caption": "Script injection: the widget on Keycloak's \"Forgot your password?\" page, before any email is sent.",
+    "device": "desktop",
+    "file": "docs/images/password-reset/inline-widget.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Password reset",
+    "title": "Separate verification page",
+    "caption": "Separate page: Turnstile, worded for the reset, before Keycloak's reset page.",
+    "device": "desktop",
+    "file": "docs/images/password-reset/separate-page.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Refusals",
+    "title": "Verification failed",
+    "caption": "Cloudflare rejected the token and the Verification Failure Action is BLOCK: the sign-in ends on Keycloak's error page.",
+    "device": "desktop",
+    "file": "docs/images/refusals/verification-failed.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Refusals",
+    "title": "Challenge failed in the browser",
+    "caption": "The widget itself failed the visitor: there is no token, so Sign In stays disabled.",
+    "device": "desktop",
+    "file": "docs/images/refusals/challenge-failed.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Refusals",
+    "title": "Blocked address",
+    "caption": "An address on the IP blocklist is refused before the widget is even shown.",
+    "device": "desktop",
+    "file": "docs/images/refusals/ip-blocked.png",
+    "width": 1280,
+    "height": 800
+  },
+  {
+    "section": "Admin console",
+    "title": "Browser flow with Turnstile",
+    "caption": "A copy of Keycloak's browser flow, with the Cloudflare Turnstile step in place of Username Password Form.",
+    "device": "desktop",
+    "file": "docs/images/admin-console/browser-flow.png",
+    "width": 1440,
+    "height": 955
+  },
+  {
+    "section": "Admin console",
+    "title": "Adding the step",
+    "caption": "Cloudflare Turnstile in the admin console's list of steps, once the extension is installed.",
+    "device": "desktop",
+    "file": "docs/images/admin-console/add-step.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "section": "Admin console",
+    "title": "Step configuration",
+    "caption": "The Cloudflare Turnstile step's settings: keys, implementation method, widget, IP lists and failure handling.",
+    "device": "desktop",
+    "file": "docs/images/admin-console/authenticator-configuration.png",
+    "width": 1440,
+    "height": 1834
+  },
+  {
+    "section": "Admin console",
+    "title": "Realm-wide settings",
+    "caption": "Realm settings > Cloudflare Turnstile: keys and policies for every step that uses the realm settings.",
+    "device": "desktop",
+    "file": "docs/images/admin-console/realm-settings.png",
+    "width": 1440,
+    "height": 1280
+  },
+  {
+    "section": "Admin console",
+    "title": "Sign-in event",
+    "caption": "Events > User events: a sign-in, with every cloudflare_turnstile_* detail of the check.",
+    "device": "desktop",
+    "file": "docs/images/admin-console/event-details.png",
+    "width": 1440,
+    "height": 1511
+  },
+  {
+    "section": "Admin console",
+    "title": "Refused sign-in event",
+    "caption": "A sign-in Turnstile refused: error turnstile_verification_failed, with Cloudflare's error codes.",
+    "device": "desktop",
+    "file": "docs/images/admin-console/event-refused.png",
+    "width": 1440,
+    "height": 1421
+  }
+]

@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Generated docs screenshots:** `docs/images/` (with `manifest.json` and the `docs/screens.md`
+  gallery) is taken by the `docs-screens` Playwright project (`npm run docs-screens` in `e2e/`): sign-in,
+  registration and reset pages with each implementation method, refusals, a phone-sized sign-in and the
+  admin console. They replace the four hand-made screenshots; the docs link to the new paths.
+- **Docs screenshots workflow:** retakes the screenshots on pushes to `develop` (and by hand) in a pinned
+  Playwright image and proposes changed ones as a PR from `chore/docs-screenshots-update`.
+- The compose file's host ports can be moved with `KC_HTTP_PORT`, `KC_DEBUG_PORT`, `POSTGRES_PORT` and
+  `MAILPIT_UI_PORT` (defaults unchanged); the e2e tests read the same `.env`.
 - **Realm-wide settings:** a "Cloudflare Turnstile" tab in Realm settings (component
   `cloudflare-turnstile-settings`, needs Keycloak's `declarative-ui` feature, or set it through realm
   JSON) with the keys and policies. The secret key may be a vault reference, on the tab or on a step.

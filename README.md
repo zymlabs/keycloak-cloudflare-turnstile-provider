@@ -2,8 +2,8 @@
 
 A Keycloak authentication provider that integrates Cloudflare Turnstile CAPTCHA verification into the authentication flow. This extension adds bot protection and security verification to Keycloak's sign-in, registration and reset-password pages.
 
-![Login with Cloudflare Turnstile](docs/login-with-turnstile-widget.png)
-*Cloudflare Turnstile widget integrated into Keycloak login flow*
+![Login with Cloudflare Turnstile](docs/images/sign-in/inline-widget.png)
+*Cloudflare Turnstile widget integrated into Keycloak login flow. Every screen, from the sign-in pages to the admin console: [docs/screens.md](docs/screens.md)*
 
 ## Features
 
@@ -50,6 +50,9 @@ Keep bots from using "Forgot your password?" to send reset emails, with the same
 
 - **Separate page:** a Turnstile page before Keycloak's reset page
 - **Script injection:** the widget on Keycloak's own reset page (the custom-theme method uses script injection there)
+
+![Reset password with Cloudflare Turnstile](docs/images/password-reset/inline-widget.png)
+*The widget on Keycloak's "Forgot your password?" page (script injection)*
 
 See [Usage Examples - Reset-Password Protection](#example-3-reset-password-protection).
 
@@ -221,7 +224,7 @@ For detailed CSP troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.
 
 ### 3. Configuration Options
 
-![Authenticator Configuration](docs/authenticator-configuration.png)
+![Authenticator Configuration](docs/images/admin-console/authenticator-configuration.png)
 *Cloudflare Turnstile authenticator configuration interface*
 
 | Option | Type | Default | Description |
@@ -243,6 +246,9 @@ For detailed CSP troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.
 Instead of repeating keys on every flow step, set them once per realm: **Realm settings →
 Cloudflare Turnstile** (component `cloudflare-turnstile-settings`). The tab has the options above
 except **Implementation Method**, which belongs to each step.
+
+![Realm-wide settings](docs/images/admin-console/realm-settings.png)
+*Realm settings → Cloudflare Turnstile*
 
 A step created in the admin console has **Use Realm Settings** turned on: it takes everything from
 the tab except its Implementation Method (the console fills in every field's default, so the step's
@@ -550,7 +556,7 @@ Turnstile's refusals don't count toward Keycloak's brute-force lockout of an acc
 
 ### Viewing Events
 
-![Event Logging Details](docs/event-logging-details.png)
+![Event Logging Details](docs/images/admin-console/event-details.png)
 *Detailed event logging showing all Cloudflare Turnstile audit fields*
 
 **Keycloak Admin Console:**
@@ -669,6 +675,9 @@ Setup imports a dedicated `turnstile-e2e` realm (`e2e/realms/turnstile-e2e-realm
 the admin API on each run, so it starts clean and doesn't touch the demo realm. Each scenario
 (script injection, separate page, custom theme, server-side rejection, IP blocklist, registration)
 has its own client bound to its own browser flow.
+
+The screenshots in the docs ([docs/screens.md](docs/screens.md)) are generated the same way, by
+`npm run docs-screens` in `e2e/`; see [CONTRIBUTING.md](CONTRIBUTING.md#docs-screenshots).
 
 ## Troubleshooting
 

@@ -159,6 +159,9 @@ All verification attempts log detailed information to Keycloak's event system (s
 - **Keycloak Admin Console** → Events → Login Events
 - **External Event Listeners** (SIEM, log aggregators, analytics platforms)
 
+![A refused sign-in in Events](images/admin-console/event-refused.png)
+*A sign-in Turnstile refused, in Events → User events*
+
 ### Event Detail Fields
 
 Every verification attempt logs 15+ event detail fields (none for [sign-ins Turnstile does not check](#what-is-not-tracked)):

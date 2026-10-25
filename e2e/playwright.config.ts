@@ -1,7 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-export const KEYCLOAK_URL = process.env.KEYCLOAK_URL ?? 'http://localhost:8080';
-export const MAILPIT_URL = process.env.MAILPIT_URL ?? 'http://localhost:8025';
+// Read the same ../.env docker compose uses, so tests target the ports it published
+// (explicit environment variables still win).
+const envFile = join(__dirname, '..', '.env');
+if (existsSync(envFile)) {
+  for (const line of readFileSync(envFile, 'utf8').split('\n')) {
+    const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
+    if (match && process.env[match[1]] === undefined) process.env[match[1]] = match[2];
+  }
+}
+
+export const KEYCLOAK_URL = process.env.KEYCLOAK_URL ?? `http://localhost:${process.env.KC_HTTP_PORT ?? '8080'}`;
+export const MAILPIT_URL = process.env.MAILPIT_URL ?? `http://localhost:${process.env.MAILPIT_UI_PORT ?? '8025'}`;
 
 export default defineConfig({
   testDir: './tests',
@@ -20,5 +32,13 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // Screenshots for the docs (`npm run docs-screens`): only listed when asked for, so the normal run never includes them
+    ...(process.env.DOCS_SCREENS ? [{
+      name: 'docs-screens',
+      testDir: './docs',
+      use: { ...devices['Desktop Chrome'] },
+    }] : []),
+  ],
 });
