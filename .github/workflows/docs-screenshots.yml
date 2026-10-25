@@ -1,0 +1,162 @@
+name: Docs screenshots
+
+# Retakes the docs screenshots (docs/images, docs/images/manifest.json and the docs/screens.md
+# gallery) with the docs-screens Playwright project (e2e/docs/) against the compose stack. Uploaded
+# as the docs-screenshots artifact and, on develop, proposed back to develop as a PR from
+# chore/docs-screenshots-update. Pull requests that change the workflow or the screenshot spec only
+# capture, to show the run still works.
+
+on:
+  push:
+    branches: [develop]
+    # What the screens show: the provider (templates, themes, messages, config labels), the stack
+    # and Keycloak version it runs, and the spec that takes them
+    paths:
+      - 'src/main/**'
+      - 'pom.xml'
+      - 'docker-compose.yml'
+      - 'e2e/docs/**'
+      - 'e2e/playwright.config.ts'
+      - 'e2e/global-setup.ts'
+      - 'e2e/package.json'
+      - 'e2e/package-lock.json'
+      - '.github/workflows/docs-screenshots.yml'
+  pull_request:
+    paths:
+      - 'e2e/docs/**'
+      - '.github/workflows/docs-screenshots.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+  # Keep in step with @playwright/test in e2e/package-lock.json: the image pins the browser build,
+  # fonts and system libraries, so the same screen renders to the same bytes on every run.
+  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble
+
+jobs:
+  capture:
+    name: Capture
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v6
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Build JAR
+        run: mvn -B package -DskipTests
+
+      - name: Start Keycloak
+        run: docker compose up -d --wait --wait-timeout 300 keycloak
+
+      # In the pinned Playwright image, on the host's network so it reaches the stack on localhost.
+      # From scratch, so screens the spec no longer takes don't linger in the manifest.
+      - name: Capture the screenshots
+        run: |
+          rm -rf docs/images docs/screens.md
+          docker run --rm --network host --ipc=host \
+            -e CI=true \
+            -v "$GITHUB_WORKSPACE:/work" -w /work/e2e \
+            "$PLAYWRIGHT_IMAGE" \
+            sh -c 'npm ci && npm run docs-screens'
+
+      - name: Upload the screenshots
+        uses: actions/upload-artifact@v7
+        with:
+          name: docs-screenshots
+          # Uploaded relative to docs/: images/… and screens.md
+          path: |
+            docs/images/
+            docs/screens.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Keycloak logs
+        if: failure()
+        run: docker compose logs keycloak
+
+      - name: Upload Playwright results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: docs-screenshots-playwright
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
+
+  propose:
+    # Puts the screenshots on chore/docs-screenshots-update, rebuilt from develop every run so the PR
+    # always holds one current commit, and opens (or updates) its PR to develop. Nothing when develop
+    # already has these screenshots.
+    #
+    # The PR is opened with GITHUB_TOKEN, and pushes or PRs made with it don't trigger other
+    # workflows: CI doesn't run on that PR by itself. Close and reopen it (or push to its branch) to
+    # run CI. The repository must allow GitHub Actions to create pull requests (Settings > Actions).
+    name: Propose to develop
+    needs: [capture]
+    if: github.ref == 'refs/heads/develop' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      BRANCH: chore/docs-screenshots-update
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v7
+        with:
+          ref: develop
+
+      - name: Replace the screenshots with this run's
+        run: rm -rf docs/images docs/screens.md
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: docs-screenshots
+          path: docs
+
+      - name: Open or update the PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          existing=$(gh pr list --head "$BRANCH" --base develop --state open --json url --jq '.[0].url // empty')
+          git add -A docs/images docs/screens.md
+          if git diff --cached --quiet; then
+            echo "develop already has these screenshots." >> "$GITHUB_STEP_SUMMARY"
+            if [ -n "$existing" ]; then
+              gh pr close "$existing" --comment "develop already has the screenshots of ${run_url}." --delete-branch
+            fi
+            exit 0
+          fi
+          git switch -c "$BRANCH"
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "docs(screens): retake the docs screenshots"
+          git push --force origin "$BRANCH"
+          body=$(printf '%s\n\n%s' \
+            "The docs screenshots, retaken from develop at ${GITHUB_SHA} by the [Docs screenshots run](${run_url}). Review the changed images in the diff, then merge." \
+            "Opened with GITHUB_TOKEN, so CI doesn't run on this PR by itself: close and reopen it to run CI.")
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" --body "$body"
+            pr="$existing"
+          else
+            pr=$(gh pr create --base develop --head "$BRANCH" \
+              --title "docs(screens): retake the docs screenshots" --body "$body")
+          fi
+          echo "PR: $pr" >> "$GITHUB_STEP_SUMMARY"
