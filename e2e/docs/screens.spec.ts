@@ -15,7 +15,14 @@ import { admin, fitViewport, once, shot, widgetSettled, writeManifest } from './
  */
 test.describe.configure({ mode: 'default' });
 test.setTimeout(120_000);
-test.use({ actionTimeout: 20_000 });
+test.use({
+  actionTimeout: 20_000,
+  launchOptions: {
+    // Skia otherwise picks image-scaling code for the CPU it runs on, so the background could come
+    // out a shade different on another machine (CI runners vary); plain sRGB and no GPU likewise
+    args: ['--disable-skia-runtime-opts', '--force-color-profile=srgb', '--disable-gpu'],
+  },
+});
 
 const REALM = 'northwind';
 const PASSWORD = 'Northwind-Passw0rd!';
