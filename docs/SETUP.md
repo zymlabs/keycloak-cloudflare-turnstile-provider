@@ -490,6 +490,9 @@ Browser with Turnstile
 2. Click **Add execution**
 3. Select **Cloudflare Turnstile** from dropdown
 4. Click **Add**
+
+   ![Adding the Cloudflare Turnstile step](images/admin-console/add-step.png)
+
 5. Set requirement to **REQUIRED**
 
 **Reorder if needed:**
@@ -527,6 +530,8 @@ To verify AFTER login (less common for Turnstile), with Implementation Method `S
 1. In the flow editor, find your "Cloudflare Turnstile" execution
 2. Click **⚙️ Settings** (gear icon) or **Actions** → **Config**
 3. Configuration dialog opens
+
+![Cloudflare Turnstile step configuration](images/admin-console/authenticator-configuration.png)
 
 ### Step 2: Required Settings
 
@@ -641,20 +646,12 @@ Or use an incognito window and temporary realm for testing.
 2. You should see the Turnstile widget **before** username/password fields
 3. Widget should match your theme configuration
 
-**Expected appearance** (managed mode):
-```
-┌─────────────────────────────────────┐
-│  Login to Your Realm                │
-├─────────────────────────────────────┤
-│                                     │
-│  [Turnstile Widget Here]            │
-│  ┌───────────────────────────────┐  │
-│  │ ✓ Verification complete       │  │
-│  └───────────────────────────────┘  │
-│                                     │
-│  [Continue Button]                  │
-└─────────────────────────────────────┘
-```
+**Expected appearance** (managed mode, separate page):
+
+![The separate Turnstile page before the sign-in form](images/sign-in/separate-page.png)
+
+With script injection, the widget is on Keycloak's sign-in form instead
+([screenshot](images/sign-in/inline-widget.png)). Every screen is in [screens.md](screens.md).
 
 ### Step 3: Test Successful Verification
 
@@ -830,7 +827,7 @@ To protect user registration from bots, you can choose between three implementat
 
 **User Experience:**
 - User clicks "Register" link
-- Turnstile verification page appears
+- Turnstile verification page appears ([screenshot](images/registration/separate-page.png))
 - After verification, user proceeds to registration form
 
 ### Option 2: Inline Widget (Script Injection)
