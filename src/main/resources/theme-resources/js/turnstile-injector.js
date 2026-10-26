@@ -140,6 +140,17 @@
     }
 
     /**
+     * The widget appearance setting: always, interaction-only or invisible. The former names
+     * (managed, non-interactive) are still accepted; anything else is 'always'.
+     */
+    function widgetAppearance(mode) {
+        if (mode === 'interaction-only' || mode === 'non-interactive') {
+            return 'interaction-only';
+        }
+        return mode === 'invisible' ? 'invisible' : 'always';
+    }
+
+    /**
      * Extract Turnstile configuration from hidden fields
      */
     function getTurnstileConfig(form) {
@@ -148,7 +159,7 @@
             logger.log('[Turnstile] Using global config:', window.TURNSTILE_CONFIG);
             return {
                 siteKey: window.TURNSTILE_CONFIG.siteKey,
-                mode: window.TURNSTILE_CONFIG.mode || 'managed',
+                mode: widgetAppearance(window.TURNSTILE_CONFIG.mode),
                 theme: window.TURNSTILE_CONFIG.theme || 'auto'
             };
         }
@@ -165,7 +176,7 @@
 
         var config = {
             siteKey: siteKey.value,
-            mode: mode ? mode.value : 'managed',
+            mode: widgetAppearance(mode ? mode.value : ''),
             theme: theme ? theme.value : 'auto'
         };
 
@@ -314,8 +325,9 @@
         container.setAttribute('data-turnstile-injected', 'true');
         container.setAttribute('data-sitekey', config.siteKey);
         container.setAttribute('data-theme', config.theme);
-        container.setAttribute('data-size', config.mode === 'invisible' ? 'invisible' : 'flexible');
-        container.setAttribute('data-appearance', config.mode === 'non-interactive' ? 'interaction-only' : 'always');
+        // Cloudflare's own mode comes from the site key; a size of 'invisible' throws for other modes
+        container.setAttribute('data-size', 'flexible');
+        container.setAttribute('data-appearance', config.mode === 'always' ? 'always' : 'interaction-only');
         return container;
     }
 

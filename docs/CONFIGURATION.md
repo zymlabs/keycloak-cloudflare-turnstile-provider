@@ -9,7 +9,7 @@ Complete reference for all configuration options in the Cloudflare Turnstile Key
 3. [Realm-wide Settings](#realm-wide-settings)
    - [Use Realm Settings](#use-realm-settings)
 4. [Widget Configuration](#widget-configuration)
-   - [Widget Mode](#widget-mode)
+   - [Widget Appearance](#widget-appearance)
    - [Widget Theme](#widget-theme)
 5. [IP Filtering](#ip-filtering)
    - [IP Allowlist](#ip-allowlist)
@@ -303,77 +303,61 @@ the component through realm JSON or the admin REST API:
 
 ## Widget Configuration
 
-### Widget Mode
+### Widget Appearance
 
+**Setting**: `widgetMode`
 **Type**: Dropdown
-**Required**: Yes
-**Options**: managed, non-interactive, invisible
-**Default**: managed
+**Options**: always, interaction-only, invisible
+**Default**: always
 
-Determines how the Turnstile widget behaves and appears to users.
+When the widget is shown on the page. This setting doesn't change how Cloudflare checks visitors: that is
+the [widget mode of your site key](#cloudflares-widget-mode), chosen in the Cloudflare dashboard.
 
-| Mode | Behavior | User Experience | Use Case |
-|------|----------|-----------------|----------|
-| **managed** | Interactive when needed | Automatic for low-risk, CAPTCHA for suspicious | Recommended for most sites - best balance |
-| **non-interactive** | Non-intrusive | Very minimal user interaction | Sites prioritizing user experience |
-| **invisible** | Runs in background | No visible widget | Advanced integrations, custom UI |
+| Value | On the page | Submit button |
+|-------|-------------|---------------|
+| **always** | Always visible: "Verifying…", then "Success!", or a checkbox when Cloudflare asks for one | Disabled until the token arrives |
+| **interaction-only** | Hidden; appears only when Cloudflare asks the visitor to click | Disabled until the token arrives |
+| **invisible** | For site keys in Cloudflare's Invisible mode: nothing is shown | Not held back |
 
-#### managed (Default)
+`always` and `interaction-only` are Cloudflare's `appearance` values. With `invisible`, the widget is
+rendered as `interaction-only`, so a site key in another mode still shows its checkbox when Cloudflare asks
+for one; but the submit button isn't held back, so use it only with an Invisible site key.
 
-```
-┌─────────────────────────────┐
-│  ✓ Verification complete    │
-└─────────────────────────────┘
-```
+> **Former names**: before this setting was renamed, `always` was called `managed` and `interaction-only`
+> was called `non-interactive`, after Cloudflare's widget modes, which the setting never changed. The former
+> names still work and mean the same; nothing needs migrating. Themes still get them as `turnstileMode`
+> (see [Custom Theme Integration](CUSTOM-THEME-INTEGRATION.md)).
 
-- Shows automatic verification for low-risk users
-- Presents interactive challenge for suspicious traffic
-- Most similar to traditional CAPTCHAs when needed
-- **Recommended for most deployments**
+#### Cloudflare's widget mode
 
-**Best for**:
-- General-purpose login protection
-- Unknown/mixed user bases
-- Balancing security and UX
+Each Turnstile widget in the Cloudflare dashboard has its own site key, secret key and mode. A page can't
+change the mode.
 
-#### non-interactive
+| Mode | What the visitor sees | Can it ask for a click? |
+|------|-----------------------|-------------------------|
+| **Managed** (Cloudflare's recommendation) | A widget that usually completes by itself | Yes, a checkbox, when Cloudflare is unsure |
+| **Non-Interactive** | A widget with a loading spinner | Never |
+| **Invisible** | Nothing | Never. Cloudflare asks you to mention its Turnstile Privacy Addendum in your privacy policy |
 
-```
-┌─────────────────────────────┐
-│  🔄 Verifying...            │
-└─────────────────────────────┘
-```
+#### Combining the two
 
-- Minimal user interaction required
-- Runs verification check automatically
-- Very low friction for users
-- May show brief "verifying" message
+| Site key mode | `always` | `interaction-only` | `invisible` |
+|---------------|----------|--------------------|-------------|
+| **Managed** | Always visible; sometimes a checkbox | Hidden unless Cloudflare asks for a click | Not recommended: the button isn't held back |
+| **Non-Interactive** | Spinner, then "Success!" | Never visible | Not recommended: the button isn't held back |
+| **Invisible** | Nothing visible | Nothing visible | Nothing visible; the button isn't held back |
 
-**Best for**:
-- Trusted user bases
-- Internal applications
-- UX-first deployments
-
-#### invisible
-
-```
-(No visible widget)
-```
-
-- Completely invisible to users
-- Verification happens in background
-- Requires custom frontend integration
-- Advanced use case
-
-**Best for**:
-- Custom login UI implementations
-- Mobile applications
-- Seamless user experiences
+- **Fewest visible widgets, full protection**: a Managed site key with `interaction-only`.
+- **Never a click**: a Non-Interactive site key with `interaction-only`. Cloudflare can't escalate to a
+  checkbox, so visitors it doesn't trust fail silently; [Fail Action](#fail-action) `REQUIRE_MFA` gives them
+  a second factor instead of a refusal.
+- While the widget is hidden, the submit button stays disabled until the token arrives, usually within a
+  second, with nothing on the page explaining the wait.
 
 **Configuration Example**:
 ```json
 {
-  "widgetMode": "managed"
+  "widgetMode": "interaction-only"
 }
 ```
 
@@ -953,7 +937,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 {
   "siteKey": "your-site-key",
   "secretKey": "your-secret-key",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "widgetTheme": "auto",
   "ipAllowlist": "192.168.0.0/16,10.0.0.0/8",
   "failAction": "BLOCK",
@@ -975,7 +959,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 {
   "siteKey": "your-site-key",
   "secretKey": "your-secret-key",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "failAction": "REQUIRE_MFA",
   "failMode": "FAIL_CLOSED",
   "recordVerifications": "true"
@@ -1020,7 +1004,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 {
   "siteKey": "your-site-key",
   "secretKey": "your-secret-key",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "failAction": "ALLOW",
   "failMode": "FAIL_OPEN",
   "recordVerifications": "true"
@@ -1042,7 +1026,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 {
   "siteKey": "your-site-key",
   "secretKey": "your-secret-key",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "ipBlocklist": "198.51.100.0/24,203.0.113.0/24",
   "failAction": "BLOCK",
   "failMode": "FAIL_CLOSED"
@@ -1061,7 +1045,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 ✅ **Do**:
 - Use `FAIL_CLOSED` mode
 - Enable `recordVerifications`
-- Use `managed` widget mode (balanced UX/security)
+- Use a Managed site key (Cloudflare's mode), with Widget Appearance `always` or `interaction-only`
 - Set reasonable timeouts (5000ms default is good)
 - Use `BLOCK` fail action
 - Review logs regularly
@@ -1080,7 +1064,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 1. **Allowlist Internal IPs**: Reduce Cloudflare API calls
 2. **Use Appropriate Timeouts**: Too low = false failures, too high = slow failures
 3. **Monitor Database Size**: Clean old records if storage is concern
-4. **Choose Right Widget Mode**: `invisible` is fastest, `managed` is most secure
+4. **Choose the Site Key's Mode**: Managed is the most secure; Non-Interactive and Invisible never ask for a click. Widget Appearance only decides when the widget is visible
 
 ### Security Tips
 

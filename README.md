@@ -57,7 +57,7 @@ Keep bots from using "Forgot your password?" to send reset emails, with the same
 See [Usage Examples - Reset-Password Protection](#example-3-reset-password-protection).
 
 ### Widget Customization
-- **Multiple widget modes** - Managed, non-interactive, or invisible challenges
+- **Widget appearance** - Always visible, shown only when Cloudflare asks for a click, or invisible; works with Managed, Non-Interactive and Invisible site keys
 - **Configurable themes** - Light, dark, or auto theme matching
 
 ### Network & Security
@@ -231,7 +231,7 @@ For detailed CSP troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.
 |--------|------|---------|-------------|
 | **Site Key** | String | Required | Your Cloudflare Turnstile site key (client-side) |
 | **Secret Key** | Password | Required | Your Cloudflare Turnstile secret key (server-side) |
-| **Widget Mode** | List | `managed` | Widget interaction mode: `managed`, `non-interactive`, or `invisible` |
+| **Widget Appearance** (`widgetMode`) | List | `always` | When the widget is shown: `always`, `interaction-only`, or `invisible` (former names `managed` and `non-interactive` still work) |
 | **Widget Theme** | List | `auto` | Visual theme: `light`, `dark`, or `auto` |
 | **Record Verifications** | Boolean | `true` | Store verification results in database for auditing |
 | **IP Allowlist** | Multi-valued | Empty | IPs/CIDRs to skip verification (e.g., `192.168.1.0/24,10.0.0.1`) |
@@ -271,11 +271,18 @@ the component through realm JSON:
 }
 ```
 
-### Widget Modes
+### Widget Appearance
 
-- **managed** (default) - Shows interactive challenge when needed, automatic verification for low-risk traffic
-- **non-interactive** - Non-intrusive challenge, best for most sites
-- **invisible** - No visible widget, runs in background (requires custom integration)
+When the widget is shown. How Cloudflare checks visitors (Managed, Non-Interactive or Invisible) is the mode
+of your site key, chosen in the Cloudflare dashboard; this setting doesn't change it.
+
+- **always** (default) - Always visible, with a checkbox when Cloudflare asks for one
+- **interaction-only** - Hidden unless Cloudflare asks the visitor to click
+- **invisible** - For site keys in Cloudflare's Invisible mode: nothing shown, submit button not held back
+
+`managed` and `non-interactive`, the former names of `always` and `interaction-only`, still work. See
+[CONFIGURATION.md](docs/CONFIGURATION.md#widget-appearance) for how the setting combines with your site
+key's mode.
 
 ### Fail Actions
 

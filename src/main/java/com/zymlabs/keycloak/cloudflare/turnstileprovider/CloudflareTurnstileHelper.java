@@ -452,7 +452,7 @@ public class CloudflareTurnstileHelper {
      * @param realmName the realm name
      * @param providerId the provider ID
      * @param siteKey the Cloudflare site key
-     * @param widgetMode the widget mode (managed, non-interactive, invisible)
+     * @param widgetMode the widget appearance (always, interaction-only, invisible)
      * @param widgetTheme the widget theme (light, dark, auto)
      * @return the full URL path for config.js
      */
@@ -468,7 +468,7 @@ public class CloudflareTurnstileHelper {
      * @param realmName the realm name
      * @param providerId the provider ID
      * @param siteKey the Cloudflare site key
-     * @param widgetMode the widget mode (managed, non-interactive, invisible)
+     * @param widgetMode the widget appearance (always, interaction-only, invisible)
      * @param widgetTheme the widget theme (light, dark, auto)
      * @param enableDebugLogging whether to enable JavaScript console debug logging
      * @return the full URL path for config.js

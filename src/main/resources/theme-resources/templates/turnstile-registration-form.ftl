@@ -16,9 +16,9 @@
                         <div class="cf-turnstile"
                              data-sitekey="${turnstileSiteKey}"
                              data-theme="${turnstileTheme}"
-                             data-size="${(turnstileMode == 'invisible')?then('invisible', 'normal')}"
-                             data-appearance="${(turnstileMode == 'non-interactive')?then('interaction-only', 'always')}"
-                             <#if turnstileMode != 'invisible'>
+                             data-size="normal"
+                             data-appearance="${turnstileAppearance!'always'}"
+                             <#if !(turnstileInvisible!false)>
                              data-callback="onTurnstileSuccess"
                              data-error-callback="onTurnstileError"
                              data-expired-callback="onTurnstileExpired"
@@ -31,7 +31,7 @@
                         <button type="submit"
                                 class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
                                 name="login" id="kc-login" value="true"
-                                <#if turnstileMode != 'invisible'>disabled</#if>>
+                                <#if !(turnstileInvisible!false)>disabled</#if>>
                             ${msg("turnstileRegistrationSubmit")}
                         </button>
                     </div>
@@ -60,7 +60,7 @@
                 }
             }
 
-            <#if turnstileMode == 'invisible'>
+            <#if turnstileInvisible!false>
             // Auto-submit for invisible mode after widget loads
             window.addEventListener('load', function() {
                 // Wait for Turnstile to be ready
@@ -79,7 +79,7 @@
                 }, 100);
             });
             <#else>
-            // Managed and Non-interactive modes: callbacks to enable/disable submit button
+            // Visible widgets (always, interaction-only): callbacks to enable/disable submit button
             function onTurnstileSuccess(token) {
                 setSubmitButtonState(false);
             }

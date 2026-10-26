@@ -65,7 +65,7 @@ The plugin provides **3 implementation approaches** combining 2 component types:
 
 **Configuration:**
 - Authenticator Config: `turnstile-config-script-injection`
-- Widget Mode: `managed`
+- Widget Appearance: `always`
 - Widget Theme: `auto`
 - Implementation Method: `SCRIPT_INJECTION`
 - Fail Action: `ALLOW`
@@ -100,7 +100,7 @@ browser-turnstile-script-injection (ALTERNATIVE)
 
 **Configuration:**
 - Authenticator Config: `cloudflare-turnstile`
-- Widget Mode: `managed`
+- Widget Appearance: `always`
 - Widget Theme: `auto`
 - Implementation: Separate Page (Authenticator)
 - Fail Action: `ALLOW`
@@ -137,7 +137,7 @@ browser-turnstile-separate-page (ALTERNATIVE)
 
 **Configuration:**
 - Authenticator Config: `turnstile-config-custom-theme`
-- Widget Mode: `managed`
+- Widget Appearance: `always`
 - Widget Theme: `auto`
 - Implementation Method: `CUSTOM_THEME`
 - Fail Action: `ALLOW`
@@ -180,7 +180,7 @@ browser-turnstile-custom-theme (ALTERNATIVE)
 
 **Configuration:**
 - Form Action Config: `turnstile-form-config-script-injection`
-- Widget Mode: `managed`
+- Widget Appearance: `always`
 - Widget Theme: `auto`
 - Implementation Method: `SCRIPT_INJECTION`
 
@@ -209,7 +209,7 @@ registration-turnstile-script-injection (REQUIRED)
 
 **Configuration:**
 - Form Action Config: `turnstile-form-config-custom-theme`
-- Widget Mode: `managed`
+- Widget Appearance: `always`
 - Widget Theme: `auto`
 - Implementation Method: `CUSTOM_THEME`
 - Fail Action: `ALLOW`
@@ -248,7 +248,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "failAction": "ALLOW",
@@ -263,7 +263,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "failAction": "ALLOW",
@@ -277,7 +277,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "failAction": "ALLOW",
@@ -292,7 +292,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "widgetTheme": "auto",
   "implementationMethod": "SCRIPT_INJECTION",
   "recordVerifications": "true",
@@ -307,7 +307,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "widgetTheme": "auto",
   "implementationMethod": "CUSTOM_THEME",
   "recordVerifications": "true",
@@ -416,7 +416,7 @@ The demo realm includes a test user:
 
 You can create hybrid flows mixing different methods:
 - Use Script Injection for login, Custom Theme for registration
-- Use different widget modes for different user segments
+- Use a different widget appearance, or site key, for different user segments
 - Apply different fail actions based on risk assessment
 
 ---
@@ -440,13 +440,13 @@ Before deploying to production:
 
 ## Quick Reference
 
-| Flow Type | Implementation | Component | Flow Name | Config Name | Widget Mode | Theme | Fail Action |
+| Flow Type | Implementation | Component | Flow Name | Config Name | Widget Appearance | Theme | Fail Action |
 |-----------|---------------|-----------|-----------|-------------|-------------|-------|-------------|
-| Browser/Login | Script Injection | Authenticator | `browser-turnstile-script-injection` | `turnstile-config-script-injection` | managed | auto | ALLOW |
-| Browser/Login | Separate Page | Authenticator | `browser-turnstile-separate-page` | `cloudflare-turnstile` | managed | auto | ALLOW |
-| Browser/Login | Custom Theme | Authenticator | `browser-turnstile-custom-theme` | `turnstile-config-custom-theme` | managed | auto | ALLOW |
-| Registration | Script Injection | Form Action | `registration-turnstile-script-injection` | `turnstile-form-config-script-injection` | managed | auto | BLOCK |
-| Registration | Custom Theme | Form Action | `registration-turnstile-custom-theme` | `turnstile-form-config-custom-theme` | managed | auto | ALLOW |
+| Browser/Login | Script Injection | Authenticator | `browser-turnstile-script-injection` | `turnstile-config-script-injection` | always | auto | ALLOW |
+| Browser/Login | Separate Page | Authenticator | `browser-turnstile-separate-page` | `cloudflare-turnstile` | always | auto | ALLOW |
+| Browser/Login | Custom Theme | Authenticator | `browser-turnstile-custom-theme` | `turnstile-config-custom-theme` | always | auto | ALLOW |
+| Registration | Script Injection | Form Action | `registration-turnstile-script-injection` | `turnstile-form-config-script-injection` | always | auto | BLOCK |
+| Registration | Custom Theme | Form Action | `registration-turnstile-custom-theme` | `turnstile-form-config-custom-theme` | always | auto | ALLOW |
 
 ---
 
