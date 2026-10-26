@@ -218,9 +218,9 @@ async function buildNorthwind() {
     resetPasswordAllowed: true,
     eventsEnabled: true,
     smtpServer: { host: 'mailpit', port: '1025', from: 'no-reply@northwind.test', fromDisplayName: 'Northwind' },
-    // The widget's script and iframe come from Cloudflare
+    // Keycloak's default policy plus Cloudflare's frame; with no script-src, the widget's script is already allowed
     browserSecurityHeaders: {
-      contentSecurityPolicy: 'frame-src \'self\' https://challenges.cloudflare.com; frame-ancestors \'self\'; object-src \'none\'; script-src \'self\' \'unsafe-inline\' https://challenges.cloudflare.com;',
+      contentSecurityPolicy: 'frame-src \'self\' https://challenges.cloudflare.com; frame-ancestors \'self\'; object-src \'none\';',
       xFrameOptions: 'SAMEORIGIN',
     },
     authenticationFlows: [...Object.values(SCENARIOS).flatMap((s) => s.flows), ...registrationFlows, ...resetFlows],

@@ -684,11 +684,8 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for complete error code reference.
 
 2. **Content Security Policy (CSP)**
    - Check browser console for CSP violations
-   - Fix: Add to CSP headers:
-     ```
-     script-src 'self' https://challenges.cloudflare.com;
-     frame-src 'self' https://challenges.cloudflare.com;
-     ```
+   - Fix: add `https://challenges.cloudflare.com` to `frame-src` in Realm settings → Security defenses →
+     Headers. Don't add a `script-src`; see [CONFIGURATION.md](CONFIGURATION.md#content-security-policy)
 
 3. **Firewall blocking Cloudflare**
    - Some corporate firewalls block challenges.cloudflare.com

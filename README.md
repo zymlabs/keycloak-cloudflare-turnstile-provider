@@ -143,68 +143,20 @@ The database table `cloudflare_turnstile_check` will be created automatically vi
 
 ### 4. Configure Content Security Policy
 
-Cloudflare Turnstile requires specific Content Security Policy (CSP) settings to load the verification widget from Cloudflare's servers.
-
-**Required CSP Directives** (minimum from Cloudflare):
-
-```
-script-src https://challenges.cloudflare.com
-frame-src https://challenges.cloudflare.com
-```
-
-**Recommended CSP Configuration** (for Keycloak):
+The widget's challenge frame comes from `https://challenges.cloudflare.com`, which Keycloak's default policy
+blocks. In each realm that shows Turnstile, open **Realm settings → Security defenses → Headers** and add
+Cloudflare to `frame-src`:
 
 ```
-script-src 'self' https://challenges.cloudflare.com;
-frame-src 'self' https://challenges.cloudflare.com;
-connect-src 'self' https://challenges.cloudflare.com;
+frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none';
 ```
 
-#### Keycloak Configuration
+Keep any other directives the realm already has. Don't add a `script-src`: Keycloak's default policy already
+allows Cloudflare's script, and a `script-src` without `'unsafe-inline'` blocks Keycloak's own inline scripts. In
+the `master` realm that leaves the admin console blank.
 
-**Via Environment Variables**:
-
-```bash
-# Add to Keycloak startup
-export KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com"
-export KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com"
-
-/opt/keycloak/bin/kc.sh start
-```
-
-**Via Docker**:
-
-```yaml
-services:
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.7.4
-    environment:
-      KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
-      KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
-```
-
-#### Reverse Proxy Configuration
-
-**nginx**:
-
-```nginx
-add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;";
-```
-
-**Apache**:
-
-```apache
-Header set Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
-```
-
-#### Verify CSP Configuration
-
-1. Open browser DevTools (F12) on login page
-2. Check Console for CSP errors
-3. Should see no errors like "Refused to load..."
-4. Turnstile widget should load successfully
-
-For detailed CSP troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md#csp-content-security-policy-blocking).
+See [CONFIGURATION.md](docs/CONFIGURATION.md#content-security-policy) for stricter policies, reverse proxies,
+verifying the header and recovering the admin console.
 
 ## Configuration
 

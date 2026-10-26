@@ -65,7 +65,7 @@ psql -d keycloak -c "SELECT success, error_codes, timestamp FROM cloudflare_turn
 // "Refused to load script from 'https://challenges.cloudflare.com/...' because it violates CSP"
 ```
 
-**If you see CSP errors**, this is the most common cause. Jump to [CSP (Content Security Policy) Blocking](#3-csp-content-security-policy-blocking) below for the fix.
+**If you see CSP errors**, this is the most common cause. Jump to [CSP (Content Security Policy) Blocking](#widget-shows-but-doesnt-load) below for the fix.
 
 ### Widget Shows But Doesn't Load
 
@@ -88,68 +88,26 @@ psql -d keycloak -c "SELECT success, error_codes, timestamp FROM cloudflare_turn
 3. **CSP (Content Security Policy) Blocking**
 
    **Symptoms**:
-   - Browser console shows: `Refused to load script from 'https://challenges.cloudflare.com/...' because it violates CSP`
+   - Browser console shows `Refused to frame 'https://challenges.cloudflare.com/...'` (or, with a strict
+     `script-src`, `Refused to load the script 'https://challenges.cloudflare.com/...'`)
    - Widget container appears but stays empty
-   - No Turnstile challenge displayed
 
-   **Cause**: Browser blocking Cloudflare resources due to strict CSP
-
-   **Fix - Configure CSP Headers**:
-
-   **Required CSP directives**:
+   **Fix**: in the realm's **Realm settings → Security defenses → Headers**, add
+   `https://challenges.cloudflare.com` to `frame-src` (and to `script-src`, if the realm has one):
    ```
-   script-src 'self' https://challenges.cloudflare.com;
-   frame-src 'self' https://challenges.cloudflare.com;
-   connect-src 'self' https://challenges.cloudflare.com;
+   frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none';
    ```
+   Keycloak has no environment variable for this header, and a header added by a reverse proxy doesn't loosen
+   the realm's.
 
-   **Keycloak Environment Variables**:
-   ```bash
-   export KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com"
-   export KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com"
-   export KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC="'self' https://challenges.cloudflare.com"
+   **Don't add a new `script-src`**: without `'unsafe-inline'` it blocks Keycloak's own inline scripts. The admin
+   and account consoles then stay blank with `Failed to resolve module specifier "react/jsx-runtime"`.
 
-   # Restart Keycloak
-   /opt/keycloak/bin/kc.sh start
-   ```
+   Messages logged from inside Cloudflare's frame, such as `Connecting to 'data:,' violates ... connect-src`,
+   come from Cloudflare's own policy on its challenge page and are expected.
 
-   **Docker Compose**:
-   ```yaml
-   services:
-     keycloak:
-       environment:
-         KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
-         KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
-         KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
-   ```
-
-   **nginx Reverse Proxy**:
-   ```nginx
-   add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;" always;
-   ```
-
-   **Apache Reverse Proxy**:
-   ```apache
-   Header always set Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
-   ```
-
-   **Verify CSP is Active**:
-   ```bash
-   # Check HTTP headers
-   curl -I https://your-keycloak.com/realms/myrealm/protocol/openid-connect/auth | grep -i content-security-policy
-
-   # Should show CSP header with Cloudflare domains
-   ```
-
-   **Verify in Browser**:
-   1. Open login page
-   2. Press F12 → Console tab
-   3. Reload page
-   4. Should NOT see CSP violation errors
-   5. Check Network tab → Filter "challenges.cloudflare.com"
-   6. All requests should be status 200
-
-   See [CONFIGURATION.md](CONFIGURATION.md#content-security-policy) for complete CSP configuration guide.
+   See [CONFIGURATION.md](CONFIGURATION.md#content-security-policy) for the complete guide, including recovering
+   the admin console.
 
 ### Widget Appears Multiple Times
 

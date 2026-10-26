@@ -370,7 +370,7 @@ List<CloudflareTurnstileCheckEntity> loginChecks = em
 - Playwright e2e tests in `e2e/` against the Docker Compose stack (`KEYCLOAK_VERSION` selects the image); CI runs them on Keycloak 24.0.0, 25.0.6 and 26.7.4
   - The `turnstile-e2e` realm (`e2e/realms/turnstile-e2e-realm.json`) is re-imported by `global-setup.ts`, which binds one client per scenario to its browser flow
   - Uses Cloudflare test keys (`1x…AA` passes, secret `2x…AA` always fails server-side); needs internet access
-  - The realm must allow `https://challenges.cloudflare.com` in its CSP (`frame-src`, `script-src`) or the widget renders blank
+  - The realm must allow `https://challenges.cloudflare.com` in its CSP `frame-src` or the widget renders blank; Keycloak's default has no `script-src`, and one without `'unsafe-inline'` breaks Keycloak's consoles
   - `tests/injector.spec.ts` tests `turnstile-injector.js` alone (pages served by Playwright, a stand-in Turnstile API);
     `tests/js-rendered-theme.spec.ts` rewrites Keycloak's pages to render the form late, like React/Keycloakify themes
 
