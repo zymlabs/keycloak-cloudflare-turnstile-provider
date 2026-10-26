@@ -9,8 +9,13 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ui.extend.UiTabProvider;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -98,5 +103,16 @@ class CloudflareTurnstileRealmSettingsTest {
 
         assertThat(CloudflareTurnstileRealmSettings.effective(null, realm, step)).containsEntry("siteKey", "s").containsEntry("secretKey", "k");
         assertThat(CloudflareTurnstileRealmSettings.usable(CloudflareTurnstileRealmSettings.effective(null, realm, null))).isFalse();
+    }
+
+    @Test
+    void theRealmSettingsTabHasATitle() throws IOException {
+        // The admin console titles a tab with the message named by its id, and shows the id without one
+        Properties messages = new Properties();
+        try (InputStream in = getClass().getResourceAsStream("/theme-resources/messages/messages_en.properties")) {
+            assertThat(in).isNotNull();
+            messages.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+        }
+        assertThat(messages.getProperty(CloudflareTurnstileRealmSettings.TAB_ID)).isEqualTo("Cloudflare Turnstile");
     }
 }
