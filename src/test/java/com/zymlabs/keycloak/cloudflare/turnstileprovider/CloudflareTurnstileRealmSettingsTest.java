@@ -43,15 +43,38 @@ class CloudflareTurnstileRealmSettingsTest {
         tab.putSingle("secretKey", "realm-secret");
         tab.putSingle("failMode", "FAIL_OPEN");
         AuthenticatorConfigModel step = new AuthenticatorConfigModel();
-        step.setConfig(new HashMap<>(Map.of("siteKey", "step-site", "failMode", "", "widgetMode", "invisible")));
+        step.setConfig(new HashMap<>(Map.of("siteKey", "step-site", "failMode", "", "widgetAppearance", "invisible")));
 
         Map<String, String> effective = CloudflareTurnstileRealmSettings.effective(null, realm, step);
 
         assertThat(effective).containsEntry("siteKey", "step-site")
                 .containsEntry("secretKey", "realm-secret")
                 .containsEntry("failMode", "FAIL_OPEN")
-                .containsEntry("widgetMode", "invisible");
+                .containsEntry("widgetAppearance", "invisible");
         assertThat(CloudflareTurnstileRealmSettings.usable(effective)).isTrue();
+    }
+
+    @Test
+    void theFormerWidgetKeyIsReadUnderTheCurrentOneAndStillOverridesTheRealm() {
+        tab.putSingle("widgetAppearance", "always");
+        AuthenticatorConfigModel step = new AuthenticatorConfigModel();
+        // As kcadm or Terraform might still write it
+        step.setConfig(new HashMap<>(Map.of("widgetMode", "non-interactive")));
+
+        assertThat(CloudflareTurnstileRealmSettings.effective(null, realm, step))
+                .containsEntry("widgetAppearance", "interaction-only")
+                .doesNotContainKey("widgetMode");
+    }
+
+    @Test
+    void anEmptyFormerWidgetKeyStillDefersToTheRealm() {
+        tab.putSingle("widgetMode", "non-interactive");
+        AuthenticatorConfigModel step = new AuthenticatorConfigModel();
+        step.setConfig(new HashMap<>(Map.of("widgetMode", "")));
+
+        assertThat(CloudflareTurnstileRealmSettings.effective(null, realm, step))
+                .containsEntry("widgetAppearance", "interaction-only")
+                .doesNotContainKey("widgetMode");
     }
 
     @Test

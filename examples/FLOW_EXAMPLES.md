@@ -248,7 +248,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "failAction": "ALLOW",
@@ -263,7 +263,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "failAction": "ALLOW",
@@ -277,7 +277,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "failAction": "ALLOW",
@@ -292,7 +292,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "implementationMethod": "SCRIPT_INJECTION",
   "recordVerifications": "true",
@@ -307,7 +307,7 @@ All authenticator configurations use Cloudflare's test keys:
 {
   "siteKey": "1x00000000000000000000AA",
   "secretKey": "1x0000000000000000000000000000000AA",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "implementationMethod": "CUSTOM_THEME",
   "recordVerifications": "true",

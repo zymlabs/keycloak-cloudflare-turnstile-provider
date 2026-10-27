@@ -181,4 +181,10 @@
         </createIndex>
     </changeSet>
 
+    <!-- The widget setting was stored as widgetMode, with values named after Cloudflare's widget modes;
+         store it as widgetAppearance, with its values' current names -->
+    <changeSet id="cloudflare-turnstile-1.2.0-widget-appearance" author="zymlabs">
+        <customChange class="com.zymlabs.keycloak.cloudflare.turnstileprovider.WidgetAppearanceMigrationChange"/>
+    </changeSet>
+
 </databaseChangeLog>

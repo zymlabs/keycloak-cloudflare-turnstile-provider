@@ -46,7 +46,10 @@ public class CloudflareTurnstileAuthenticator extends AbstractUsernameFormAuthen
     // Configuration keys
     public static final String CONFIG_SITE_KEY = "siteKey";
     public static final String CONFIG_SECRET_KEY = "secretKey";
-    public static final String CONFIG_WIDGET_MODE = "widgetMode";
+    public static final String CONFIG_WIDGET_APPEARANCE = WidgetAppearance.KEY;
+    /** Former key of {@link #CONFIG_WIDGET_APPEARANCE}, still read when that is absent. */
+    @Deprecated
+    public static final String CONFIG_WIDGET_MODE = WidgetAppearance.LEGACY_KEY;
     public static final String CONFIG_WIDGET_THEME = "widgetTheme";
     public static final String CONFIG_RECORD_VERIFICATIONS = "recordVerifications";
     public static final String CONFIG_IP_ALLOWLIST = "ipAllowlist";
@@ -158,7 +161,7 @@ public class CloudflareTurnstileAuthenticator extends AbstractUsernameFormAuthen
 
         // Display Turnstile challenge
         String siteKey = configMap.get(CONFIG_SITE_KEY);
-        WidgetAppearance widgetAppearance = WidgetAppearance.fromConfig(configMap.get(CONFIG_WIDGET_MODE));
+        WidgetAppearance widgetAppearance = WidgetAppearance.fromConfig(configMap.get(CONFIG_WIDGET_APPEARANCE));
         String widgetTheme = configMap.getOrDefault(CONFIG_WIDGET_THEME, "auto");
         boolean enableDebugLogging = Boolean.parseBoolean(configMap.getOrDefault(CONFIG_ENABLE_DEBUG_LOGGING, "false"));
         String implementationMethod = implementationMethod(context, configMap);
@@ -184,7 +187,7 @@ public class CloudflareTurnstileAuthenticator extends AbstractUsernameFormAuthen
         String realmName = context.getRealm().getName();
         String providerId = CloudflareTurnstileResourceProviderFactory.PROVIDER_ID;
         form.addScript(CloudflareTurnstileHelper.buildConfigJsUrl(context.getUriInfo(), realmName, providerId,
-                configMap.get(CONFIG_SITE_KEY), WidgetAppearance.fromConfig(configMap.get(CONFIG_WIDGET_MODE)).value(),
+                configMap.get(CONFIG_SITE_KEY), WidgetAppearance.fromConfig(configMap.get(CONFIG_WIDGET_APPEARANCE)).value(),
                 configMap.getOrDefault(CONFIG_WIDGET_THEME, "auto"),
                 Boolean.parseBoolean(configMap.getOrDefault(CONFIG_ENABLE_DEBUG_LOGGING, "false"))));
         form.addScript(CloudflareTurnstileHelper.buildInjectorJsUrl(context.getUriInfo(), realmName, providerId));
@@ -242,7 +245,7 @@ public class CloudflareTurnstileAuthenticator extends AbstractUsernameFormAuthen
                     .setAttribute("turnstileSiteKey", configMap.get(CONFIG_SITE_KEY))
                     .setAttribute("turnstileTheme", configMap.getOrDefault(CONFIG_WIDGET_THEME, "auto"))
                     .setAttribute("enableDebugLogging", Boolean.parseBoolean(configMap.getOrDefault(CONFIG_ENABLE_DEBUG_LOGGING, "false")));
-            WidgetAppearance.fromConfig(configMap.get(CONFIG_WIDGET_MODE)).setAttributes(form);
+            WidgetAppearance.fromConfig(configMap.get(CONFIG_WIDGET_APPEARANCE)).setAttributes(form);
             if (scriptInjection) {
                 form.setAttribute("turnstileUseScriptInjection", true);
                 addInjectionScripts(form, context, configMap);
