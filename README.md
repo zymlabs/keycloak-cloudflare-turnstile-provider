@@ -183,7 +183,7 @@ verifying the header and recovering the admin console.
 |--------|------|---------|-------------|
 | **Site Key** | String | Required | Your Cloudflare Turnstile site key (client-side) |
 | **Secret Key** | Password | Required | Your Cloudflare Turnstile secret key (server-side) |
-| **Widget Appearance** (`widgetMode`) | List | `always` | When the widget is shown: `always`, `interaction-only`, or `invisible` (former names `managed` and `non-interactive` still work) |
+| **Widget Appearance** (`widgetAppearance`) | List | `always` | When the widget is shown: `always`, `interaction-only`, or `invisible` (former names `managed` and `non-interactive` still work) |
 | **Widget Theme** | List | `auto` | Visual theme: `light`, `dark`, or `auto` |
 | **Record Verifications** | Boolean | `true` | Store verification results in database for auditing |
 | **IP Allowlist** | Multi-valued | Empty | IPs/CIDRs to skip verification (e.g., `192.168.1.0/24,10.0.0.1`) |

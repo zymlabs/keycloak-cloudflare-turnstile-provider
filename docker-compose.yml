@@ -70,8 +70,9 @@ services:
       start_period: 60s
 
     volumes:
-      - ./target/zymlabs-cloudflare-turnstile-provider.jar:/opt/keycloak/providers/zymlabs-cloudflare-turnstile-provider.jar:ro
-      - ./examples/realms:/opt/keycloak/data/import:ro
+      # PROVIDER_JAR and REALM_IMPORT_DIR let the upgrade test start from an earlier release and other realms
+      - ${PROVIDER_JAR:-./target/zymlabs-cloudflare-turnstile-provider.jar}:/opt/keycloak/providers/zymlabs-cloudflare-turnstile-provider.jar:ro
+      - ${REALM_IMPORT_DIR:-./examples/realms}:/opt/keycloak/data/import:ro
 
   keycloak-init:
     image: curlimages/curl:8.16.0

@@ -136,7 +136,7 @@ public class TestUtils {
         Map<String, String> config = new HashMap<>();
         config.put(CloudflareTurnstileAuthenticator.CONFIG_SITE_KEY, "test-site-key");
         config.put(CloudflareTurnstileAuthenticator.CONFIG_SECRET_KEY, "test-secret-key");
-        config.put(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_MODE, "managed");
+        config.put(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_APPEARANCE, "always");
         config.put(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_THEME, "auto");
         config.put(CloudflareTurnstileAuthenticator.CONFIG_IMPLEMENTATION_METHOD, "SEPARATE_PAGE");
         config.put(CloudflareTurnstileAuthenticator.CONFIG_FAIL_MODE, "FAIL_CLOSED");

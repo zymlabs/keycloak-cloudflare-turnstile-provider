@@ -212,7 +212,7 @@ the component through realm JSON or the admin REST API:
 
 ### Widget Appearance
 
-**Setting**: `widgetMode`
+**Setting**: `widgetAppearance`
 **Type**: Dropdown
 **Options**: always, interaction-only, invisible
 **Default**: always
@@ -230,10 +230,20 @@ the [widget mode of your site key](#cloudflares-widget-mode), chosen in the Clou
 rendered as `interaction-only`, so a site key in another mode still shows its checkbox when Cloudflare asks
 for one; but the submit button isn't held back, so use it only with an Invisible site key.
 
-> **Former names**: before this setting was renamed, `always` was called `managed` and `interaction-only`
-> was called `non-interactive`, after Cloudflare's widget modes, which the setting never changed. The former
-> names still work and mean the same; nothing needs migrating. Themes still get them as `turnstileMode`
-> (see [Custom Theme Integration](CUSTOM-THEME-INTEGRATION.md)).
+> **Former key and names**: this setting used to be stored as `widgetMode`, and `always` was called
+> `managed` and `interaction-only` `non-interactive`, after Cloudflare's widget modes, which the setting
+> never changed. Nothing needs doing on upgrade:
+>
+> - The first time Keycloak starts with this version, it renames stored settings, in flow steps and in
+>   realm settings, to `widgetAppearance` with the current names.
+> - Realms imported from older JSON are renamed as they are imported.
+> - A `widgetMode` written later, by kcadm, Terraform or another admin API client, is still read (and
+>   logged once); rename it there. The former names are also still read.
+>
+> During a rolling upgrade, nodes still on the earlier version show the widget always once they reload
+> the renamed settings, and so does an earlier version if you go back to one, until the setting is
+> stored as `widgetMode` again. Themes still get the former names as `turnstileMode` (see
+> [Custom Theme Integration](CUSTOM-THEME-INTEGRATION.md)).
 
 #### Cloudflare's widget mode
 
@@ -264,7 +274,7 @@ change the mode.
 **Configuration Example**:
 ```json
 {
-  "widgetMode": "interaction-only"
+  "widgetAppearance": "interaction-only"
 }
 ```
 
@@ -844,7 +854,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 {
   "siteKey": "your-site-key",
   "secretKey": "your-secret-key",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "ipAllowlist": "192.168.0.0/16,10.0.0.0/8",
   "failAction": "BLOCK",
@@ -866,7 +876,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 {
   "siteKey": "your-site-key",
   "secretKey": "your-secret-key",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "failAction": "REQUIRE_MFA",
   "failMode": "FAIL_CLOSED",
   "recordVerifications": "true"
@@ -890,7 +900,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 {
   "siteKey": "your-site-key",
   "secretKey": "your-secret-key",
-  "widgetMode": "invisible",
+  "widgetAppearance": "invisible",
   "widgetTheme": "auto",
   "failAction": "BLOCK",
   "failMode": "FAIL_CLOSED"
@@ -911,7 +921,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 {
   "siteKey": "your-site-key",
   "secretKey": "your-secret-key",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "failAction": "ALLOW",
   "failMode": "FAIL_OPEN",
   "recordVerifications": "true"
@@ -933,7 +943,7 @@ Timeout → ⚠️ Warning → ✓ Access Allowed → Event logged
 {
   "siteKey": "your-site-key",
   "secretKey": "your-secret-key",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "ipBlocklist": "198.51.100.0/24,203.0.113.0/24",
   "failAction": "BLOCK",
   "failMode": "FAIL_CLOSED"

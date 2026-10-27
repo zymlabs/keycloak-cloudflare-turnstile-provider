@@ -103,7 +103,7 @@ public class CloudflareTurnstileFormAction implements FormAction {
 
         // Get configuration
         String siteKey = configMap.get(CloudflareTurnstileAuthenticator.CONFIG_SITE_KEY);
-        WidgetAppearance widgetAppearance = WidgetAppearance.fromConfig(configMap.get(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_MODE));
+        WidgetAppearance widgetAppearance = WidgetAppearance.fromConfig(configMap.get(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_APPEARANCE));
         String widgetMode = widgetAppearance.value();
         String widgetTheme = configMap.getOrDefault(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_THEME, "auto");
         String implementationMethod = configMap.getOrDefault(CONFIG_IMPLEMENTATION_METHOD, METHOD_SCRIPT_INJECTION);

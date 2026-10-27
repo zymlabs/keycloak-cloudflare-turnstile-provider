@@ -354,7 +354,7 @@ API; see [CONFIGURATION.md](CONFIGURATION.md#realm-wide-settings).
 
 ### Step 3: Widget Configuration
 
-**Widget Appearance** (`widgetMode`): when the widget is shown; it doesn't change the site key's mode
+**Widget Appearance** (`widgetAppearance`): when the widget is shown; it doesn't change the site key's mode
 - `always` (default) - Always visible
 - `interaction-only` - Hidden unless Cloudflare asks the visitor to click
 - `invisible` - Only for site keys in Cloudflare's Invisible mode

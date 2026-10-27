@@ -189,17 +189,65 @@ jobs:
           name: keycloak-cloudflare-turnstile-${{ needs.build-and-test.outputs.semver }}
           path: target
 
-      # Imports examples/realms on the oldest supported version, then upgrades the same database.
-      # Keycloak's own migrations assume built-in flows (e.g. "browser") exist; a realm without them
-      # fails to start after upgrading (MigrateTo26_6_1 NullPointerException).
-      - name: Start Keycloak 24.0.0 and import example realms
+      # The provider as it was before the widget setting was renamed: it stored widgetMode, with the
+      # former value names. Built from the commit of 0.1.0-alpha.107, since old pre-releases are deleted.
+      - name: Check out the previous provider
+        uses: actions/checkout@v7
+        with:
+          ref: 001e2f5ac1c9a464696065085a9f23736bf38e99
+          path: previous
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v6
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Build the previous provider JAR
+        run: |
+          mvn -B -q -f previous/pom.xml package -DskipTests
+          mkdir -p target/previous
+          cp previous/target/zymlabs-cloudflare-turnstile-provider.jar target/previous/provider.jar
+
+      # The example realm as the previous release stored it: the widget setting as widgetMode, with the
+      # former value names, in its steps (one non-interactive) and in realm settings. (The e2e realm can't
+      # be used: it lacks built-in flows, which Keycloak's own migrations need; see below.)
+      - name: Write the example realm as the previous release stored it
+        run: |
+          mkdir -p target/upgrade-realms
+          jq '(.authenticatorConfig[].config | select(has("widgetAppearance"))) |=
+                (.widgetMode = ({"always": "managed", "interaction-only": "non-interactive"}[.widgetAppearance] // .widgetAppearance)
+                 | del(.widgetAppearance))
+              | .authenticatorConfig[0].config.widgetMode = "non-interactive"
+              | .components["org.keycloak.services.ui.extend.UiTabProvider"] = [{
+                  name: "cloudflare-turnstile-settings", providerId: "cloudflare-turnstile-settings",
+                  subComponents: {}, config: {widgetMode: ["non-interactive"]}}]' \
+            examples/realms/turnstile-demo-realm.json > target/upgrade-realms/turnstile-demo-realm.json
+
+      # Imports the realms on the oldest supported version with the previous provider, then upgrades the
+      # same database, and the provider. Keycloak's own migrations assume built-in flows (e.g. "browser")
+      # exist; a realm without them fails to start after upgrading (MigrateTo26_6_1 NullPointerException).
+      - name: Start Keycloak 24.0.0 with the previous provider and import the realms
         env:
           KEYCLOAK_VERSION: '24.0.0'
+          PROVIDER_JAR: ./target/previous/provider.jar
+          REALM_IMPORT_DIR: ./target/upgrade-realms
         run: docker compose up -d --wait --wait-timeout 300 keycloak
 
-      - name: Upgrade the same database to Keycloak 26.7.4
+      - name: Count the widget settings stored before the rename
+        run: |
+          q() { docker compose exec -T postgres psql -U keycloak -d keycloak -tAc "$1"; }
+          LEGACY=$(q "select count(*) from authenticator_config_entry where name = 'widgetMode'")
+          TAB_LEGACY=$(q "select count(*) from component_config where name = 'widgetMode'")
+          echo "Step configs with widgetMode: $LEGACY; realm settings with widgetMode: $TAB_LEGACY"
+          test "$LEGACY" -gt 0 && test "$TAB_LEGACY" -gt 0
+          echo "WIDGET_SETTINGS=$(q "select count(*) from authenticator_config_entry where name in ('widgetMode', 'widgetAppearance')")" >> "$GITHUB_ENV"
+
+      - name: Upgrade the same database to Keycloak 26.7.4 and this provider
         env:
           KEYCLOAK_VERSION: '26.7.4'
+          REALM_IMPORT_DIR: ./target/upgrade-realms
         run: docker compose up -d --wait --wait-timeout 300 keycloak
 
       - name: Verify migration completed
@@ -207,6 +255,17 @@ jobs:
           VERSION=$(docker compose exec -T postgres psql -U keycloak -d keycloak -tAc "select version from migration_model order by update_time desc limit 1")
           echo "Database model version: $VERSION"
           test "$VERSION" = "26.7.4"
+
+      - name: Verify the widget setting was renamed
+        run: |
+          q() { docker compose exec -T postgres psql -U keycloak -d keycloak -tAc "$1"; }
+          test "$(q "select count(*) from authenticator_config_entry where name = 'widgetMode'")" = 0
+          test "$(q "select count(*) from component_config where name = 'widgetMode'")" = 0
+          test "$(q "select count(*) from authenticator_config_entry where name = 'widgetAppearance'")" = "$WIDGET_SETTINGS"
+          test "$(q "select count(*) from authenticator_config_entry where name = 'widgetAppearance' and value in ('managed', 'non-interactive')")" = 0
+          test "$(q "select count(*) from authenticator_config_entry where name = 'widgetAppearance' and value = 'interaction-only'")" = 1
+          test "$(q "select value from component_config where name = 'widgetAppearance'")" = interaction-only
+          echo "All $WIDGET_SETTINGS step settings are stored as widgetAppearance"
 
       - name: Keycloak logs
         if: failure()

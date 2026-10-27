@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Realm-wide Turnstile settings (the "Cloudflare Turnstile" tab in Realm settings), and the
@@ -23,6 +24,7 @@ import java.util.Set;
 public final class CloudflareTurnstileRealmSettings {
 
     private static final Logger logger = Logger.getLogger(CloudflareTurnstileRealmSettings.class);
+    private static final AtomicBoolean legacyKeyLogged = new AtomicBoolean();
 
     /** Component (and tab) id of the realm settings. */
     public static final String TAB_ID = "cloudflare-turnstile-settings";
@@ -51,7 +53,7 @@ public final class CloudflareTurnstileRealmSettings {
                 .findFirst()
                 .map(ComponentModel::getConfig)
                 .ifPresent(config -> config.forEach((key, list) -> first(list).ifPresent(v -> values.put(key, v))));
-        return values;
+        return withCurrentKey(values);
     }
 
     /**
@@ -63,7 +65,8 @@ public final class CloudflareTurnstileRealmSettings {
         Map<String, String> values = realm(realm);
         if (stepConfig != null && stepConfig.getConfig() != null) {
             boolean realmSettings = Boolean.parseBoolean(stepConfig.getConfig().get(CONFIG_USE_REALM_SETTINGS));
-            stepConfig.getConfig().forEach((key, value) -> {
+            // Renamed per source, so a step's former widgetMode still overrides the realm's widgetAppearance
+            withCurrentKey(stepConfig.getConfig()).forEach((key, value) -> {
                 if (value != null && !value.isBlank() && (!realmSettings || STEP_SETTINGS.contains(key))) {
                     values.put(key, value);
                 }
@@ -76,6 +79,20 @@ public final class CloudflareTurnstileRealmSettings {
             }
         }
         return values;
+    }
+
+    /**
+     * Settings with the widget setting under its current key. Settings stored before the rename are
+     * renamed in the database ({@link WidgetAppearanceMigration}), so the former key only turns up when
+     * an admin API client still writes it; that is logged once.
+     */
+    private static Map<String, String> withCurrentKey(Map<String, String> settings) {
+        if (settings.containsKey(WidgetAppearance.LEGACY_KEY) && legacyKeyLogged.compareAndSet(false, true)) {
+            logger.warnf("A Cloudflare Turnstile setting is stored as %s, which was renamed to %s; it is read for now. "
+                    + "Rename it where it is written (kcadm, Terraform or another admin API client).",
+                    WidgetAppearance.LEGACY_KEY, WidgetAppearance.KEY);
+        }
+        return WidgetAppearance.withCurrentKey(settings);
     }
 
     /** Timeout used when a setting is missing or not a positive number of milliseconds. */

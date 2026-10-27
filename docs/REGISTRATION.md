@@ -325,7 +325,7 @@ Start: Choose Registration Protection Option
 
 | Setting | Options | Description |
 |---------|---------|-------------|
-| **Widget Appearance** (`widgetMode`) | `always`, `interaction-only`, `invisible` | When the widget is shown |
+| **Widget Appearance** (`widgetAppearance`) | `always`, `interaction-only`, `invisible` | When the widget is shown |
 | **Widget Theme** | `auto`, `light`, `dark` | Visual theme |
 
 **Widget Appearance Explained:**

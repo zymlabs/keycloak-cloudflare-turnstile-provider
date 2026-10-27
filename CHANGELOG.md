@@ -32,12 +32,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   compose file now includes Mailpit for Keycloak's emails and turns on `declarative-ui`.
 
 ### Changed
-- **"Widget Mode" is now "Widget Appearance", with values named for what they do**: `always`
-  (formerly `managed`), `interaction-only` (formerly `non-interactive`) and `invisible`. The setting
-  only ever set Cloudflare's `appearance`; Cloudflare's own mode (Managed, Non-Interactive, Invisible)
-  belongs to the site key and is chosen in the Cloudflare dashboard. The config key is still
-  `widgetMode`, the former names still work and mean the same, and nothing needs migrating. Themes get
-  `turnstileAppearance` and `turnstileInvisible`; `turnstileMode` still carries the former names.
+- **"Widget Mode" is now "Widget Appearance", stored as `widgetAppearance`, with values named for what
+  they do**: `always` (formerly `managed`), `interaction-only` (formerly `non-interactive`) and
+  `invisible`. The setting only ever set Cloudflare's `appearance`; Cloudflare's own mode (Managed,
+  Non-Interactive, Invisible) belongs to the site key and is chosen in the Cloudflare dashboard. Stored
+  settings are renamed by a database changeset the first time Keycloak starts with this version (flow
+  steps and realm settings), and realms imported from older JSON as they are imported. A `widgetMode`
+  written later (kcadm, Terraform) is still read, with a warning in the log, as are the former names.
+  An earlier version, during a rolling upgrade or after going back, doesn't know the new key and shows
+  the widget always. Themes get `turnstileAppearance` and `turnstileInvisible`; `turnstileMode` still
+  carries the former names.
 - **With the widget inline, the sign-in page is Keycloak's own username/password form**, built and
   checked by Keycloak's step with the widget added. `login_hint` and remembered usernames are filled
   in, a user identified by an earlier step is asked only for the password, and on Keycloak 26 (with

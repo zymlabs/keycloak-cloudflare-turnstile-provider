@@ -99,7 +99,7 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
                 .add()
 
                 .property()
-                .name(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_MODE)
+                .name(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_APPEARANCE)
                 .label("Widget Appearance")
                 .helpText("When the widget is shown. always (default): always visible. interaction-only: hidden unless Cloudflare asks the visitor to click. invisible: for site keys created in Cloudflare's Invisible mode; nothing is shown and the submit button isn't held back. Cloudflare's own mode (Managed, Non-Interactive, Invisible) is set on the site key in the Cloudflare dashboard. The former values managed and non-interactive still work, as always and interaction-only.")
                 .type(ProviderConfigProperty.LIST_TYPE)
@@ -206,7 +206,7 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        // No post-initialization required
+        WidgetAppearanceMigration.register(factory);
     }
 
     @Override

@@ -104,7 +104,7 @@ All configuration is stored in Keycloak's database and accessed via `Authenticat
 - `siteKey` - Cloudflare site key (client-side)
 - `secretKey` - Cloudflare secret key (server-side; stored as entered unless it is a vault reference)
 - `implementationMethod` - SEPARATE_PAGE | SCRIPT_INJECTION | CUSTOM_THEME (UI label: "Implementation Method")
-- `widgetMode` - Widget Appearance: always | interaction-only | invisible (`WidgetAppearance`; the former names managed and non-interactive are still read). Cloudflare's own mode belongs to the site key
+- `widgetAppearance` - Widget Appearance: always | interaction-only | invisible (`WidgetAppearance`). Formerly `widgetMode`, with the names managed and non-interactive: `WidgetAppearanceMigrationChange` (a changeset) renames stored settings once, `WidgetAppearanceMigration` renames imported realms, and `CloudflareTurnstileRealmSettings.effective` still reads the former key. Cloudflare's own mode belongs to the site key
 - `widgetTheme` - light | dark | auto
 - `recordVerifications` - boolean, store in database
 - `ipAllowlist` - comma-separated IPs/CIDRs to handle specially (see `allowlistBehavior`)

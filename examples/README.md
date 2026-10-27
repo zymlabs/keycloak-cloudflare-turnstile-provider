@@ -89,7 +89,7 @@ Example authenticator configuration with recommended settings.
 |---------|---------------|-------------|
 | siteKey | 0x4AAA...example | Your Cloudflare Turnstile site key (public) |
 | secretKey | 0x4AAA...secret | Your Cloudflare Turnstile secret key (private) |
-| widgetMode | always | Widget appearance: always, interaction-only, invisible (former names managed and non-interactive still work) |
+| widgetAppearance | always | Widget appearance: always, interaction-only, invisible (former names managed and non-interactive still work) |
 | widgetTheme | auto | Theme: light, dark, auto |
 | recordVerifications | true | Store results in database for auditing |
 | ipAllowlist | (empty) | IPs/CIDRs to skip verification |
@@ -117,7 +117,7 @@ Example authenticator configuration with recommended settings.
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "",
@@ -145,7 +145,7 @@ Example authenticator configuration with recommended settings.
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "interaction-only",
+  "widgetAppearance": "interaction-only",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "192.168.0.0/16,10.0.0.0/8",
@@ -173,7 +173,7 @@ Example authenticator configuration with recommended settings.
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "",
@@ -205,7 +205,7 @@ Example authenticator configuration with recommended settings.
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "",
@@ -240,7 +240,7 @@ Change to `failAction: BLOCK` and `failMode: FAIL_CLOSED`
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "invisible",
+  "widgetAppearance": "invisible",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "10.0.0.0/8",
@@ -308,7 +308,7 @@ Block specific IPs or ranges known for abuse.
 
 2. **Show the widget all the time** (optional):
    ```
-   widgetMode: interaction-only → always
+   widgetAppearance: interaction-only → always
    ```
 
 3. **Keep recording enabled**:

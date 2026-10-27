@@ -1,7 +1,7 @@
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "always",
+  "widgetAppearance": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "",
