@@ -189,12 +189,26 @@ jobs:
           name: keycloak-cloudflare-turnstile-${{ needs.build-and-test.outputs.semver }}
           path: target
 
-      # The last release that stored the widget setting as widgetMode, with the former value names
-      - name: Download the previous provider JAR
+      # The provider as it was before the widget setting was renamed: it stored widgetMode, with the
+      # former value names. Built from the commit of 0.1.0-alpha.107, since old pre-releases are deleted.
+      - name: Check out the previous provider
+        uses: actions/checkout@v7
+        with:
+          ref: 001e2f5ac1c9a464696065085a9f23736bf38e99
+          path: previous
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v6
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Build the previous provider JAR
         run: |
+          mvn -B -q -f previous/pom.xml package -DskipTests
           mkdir -p target/previous
-          curl -fsSL -o target/previous/provider.jar \
-            "https://github.com/${{ github.repository }}/releases/download/0.1.0-alpha.107/zymlabs-cloudflare-turnstile-provider-0.1.0-alpha.107.jar"
+          cp previous/target/zymlabs-cloudflare-turnstile-provider.jar target/previous/provider.jar
 
       # The example realm as the previous release stored it: the widget setting as widgetMode, with the
       # former value names, in its steps (one non-interactive) and in realm settings. (The e2e realm can't

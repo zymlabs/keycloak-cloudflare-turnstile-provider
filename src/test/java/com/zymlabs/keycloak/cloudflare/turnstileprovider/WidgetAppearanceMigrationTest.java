@@ -103,6 +103,24 @@ class WidgetAppearanceMigrationTest {
     }
 
     @Test
+    void aStepConfigThatCantBeSavedDoesntFailTheImport() {
+        RealmModel realm = mock(RealmModel.class);
+        when(realm.getId()).thenReturn("r1");
+        AuthenticationFlowModel flow = new AuthenticationFlowModel();
+        flow.setId("f1");
+        when(realm.getAuthenticationFlowsStream()).thenAnswer(i -> Stream.of(flow));
+        when(realm.getAuthenticationExecutionsStream("f1")).thenAnswer(i -> Stream.of(
+                execution(CloudflareTurnstileAuthenticatorFactory.PROVIDER_ID, "turnstile")));
+        when(realm.getAuthenticatorConfigById("turnstile")).thenReturn(config("turnstile", Map.of("widgetMode", "managed")));
+        when(realm.getComponentsStream("r1", UiTabProvider.class.getName())).thenAnswer(i -> Stream.empty());
+        doThrow(new IllegalStateException("invalid")).when(realm).updateAuthenticatorConfig(any());
+
+        WidgetAppearanceMigration.renameIn(realm);
+
+        verify(realm).updateAuthenticatorConfig(any());
+    }
+
+    @Test
     void realmSettingsThatCantBeSavedDontFailTheImport() {
         RealmModel realm = mock(RealmModel.class);
         when(realm.getId()).thenReturn("r1");

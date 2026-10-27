@@ -60,10 +60,16 @@ public final class WidgetAppearanceMigration {
         for (String id : configIds) {
             AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(id);
             if (config != null && config.getConfig() != null && config.getConfig().containsKey(WidgetAppearance.LEGACY_KEY)) {
-                config.setConfig(WidgetAppearance.withCurrentKey(config.getConfig()));
-                realm.updateAuthenticatorConfig(config);
-                logger.debugf("Renamed %s to %s in step config %s of realm %s",
-                        WidgetAppearance.LEGACY_KEY, WidgetAppearance.KEY, config.getAlias(), realm.getName());
+                try {
+                    config.setConfig(WidgetAppearance.withCurrentKey(config.getConfig()));
+                    realm.updateAuthenticatorConfig(config);
+                    logger.debugf("Renamed %s to %s in step config %s of realm %s",
+                            WidgetAppearance.LEGACY_KEY, WidgetAppearance.KEY, config.getAlias(), realm.getName());
+                } catch (RuntimeException e) {
+                    // The former key is still read; an import shouldn't fail over the rename
+                    logger.warnf("Couldn't rename %s to %s in step config %s of realm %s: %s",
+                            WidgetAppearance.LEGACY_KEY, WidgetAppearance.KEY, config.getAlias(), realm.getName(), e.getMessage());
+                }
             }
         }
 
@@ -77,7 +83,8 @@ public final class WidgetAppearanceMigration {
                     logger.debugf("Renamed %s to %s in the realm settings of realm %s",
                             WidgetAppearance.LEGACY_KEY, WidgetAppearance.KEY, realm.getName());
                 } catch (RuntimeException e) {
-                    // Saving validates the whole component; an import shouldn't fail over the rename
+                    // Saving validates the whole component; the former key is still read, and an import
+                    // shouldn't fail over the rename
                     logger.warnf("Couldn't rename %s to %s in the Cloudflare Turnstile realm settings of realm %s: %s",
                             WidgetAppearance.LEGACY_KEY, WidgetAppearance.KEY, realm.getName(), e.getMessage());
                 }

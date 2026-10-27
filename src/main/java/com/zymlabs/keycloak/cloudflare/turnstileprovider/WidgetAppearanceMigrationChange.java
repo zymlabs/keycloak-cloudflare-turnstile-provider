@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,11 +37,13 @@ public class WidgetAppearanceMigrationChange extends CustomKeycloakTask {
 
     /** Step configs: rows keyed by config id and name. */
     private int renameStepSettings() throws SQLException {
-        List<String> providers = List.copyOf(WidgetAppearanceMigration.STEP_PROVIDERS);
+        List<String> parameters = new ArrayList<>(List.of(WidgetAppearance.LEGACY_KEY, WidgetAppearance.KEY));
+        parameters.addAll(WidgetAppearanceMigration.STEP_PROVIDERS);
+        String providers = String.join(", ", Collections.nCopies(WidgetAppearanceMigration.STEP_PROVIDERS.size(), "?"));
         List<Row> rows = read("SELECT c.AUTHENTICATOR_ID, c.AUTHENTICATOR_ID, c.NAME, c.VALUE FROM " + getTableName("AUTHENTICATOR_CONFIG_ENTRY") + " c"
                         + " WHERE c.NAME IN (?, ?) AND c.AUTHENTICATOR_ID IN (SELECT e.AUTH_CONFIG FROM " + getTableName("AUTHENTICATION_EXECUTION") + " e"
-                        + " WHERE e.AUTHENTICATOR IN (?, ?))",
-                WidgetAppearance.LEGACY_KEY, WidgetAppearance.KEY, providers.get(0), providers.get(1));
+                        + " WHERE e.AUTHENTICATOR IN (" + providers + "))",
+                parameters.toArray(String[]::new));
         Plan plan = WidgetAppearanceMigration.plan(rows);
 
         String table = database.correctObjectName("AUTHENTICATOR_CONFIG_ENTRY", Table.class);
