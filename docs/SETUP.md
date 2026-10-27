@@ -175,232 +175,27 @@ WHERE table_name = 'cloudflare_turnstile_check';
 
 ## 4. Configure Content Security Policy
 
-⚠️ **IMPORTANT**: Cloudflare Turnstile requires CSP configuration to load the widget from Cloudflare's servers.
+Turnstile loads its challenge frame from `https://challenges.cloudflare.com`. Keycloak's default realm policy
+(`frame-src 'self'; frame-ancestors 'self'; object-src 'none';`) blocks it, so the widget doesn't appear.
 
-### Why CSP is Required
+In each realm that shows Turnstile:
 
-Turnstile loads JavaScript and iframe content from `challenges.cloudflare.com`. Without proper CSP configuration, browsers will block these resources and the widget won't appear.
+1. Go to **Realm settings → Security defenses → Headers**
+2. Add `https://challenges.cloudflare.com` to `frame-src` in **Content-Security-Policy**:
+   ```
+   frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none';
+   ```
+3. Click **Save**. The header changes immediately, without a restart.
 
-### Required CSP Directives
+Keep any other directives the realm already has.
 
-**Minimum (from Cloudflare documentation)**:
-```
-script-src https://challenges.cloudflare.com
-frame-src https://challenges.cloudflare.com
-```
+> **Warning**: don't add a `script-src`. Keycloak's default policy already allows Cloudflare's script, and a
+> `script-src` without `'unsafe-inline'` blocks the inline scripts Keycloak's admin and account consoles start
+> with. In the `master` realm that leaves the admin console blank.
 
-**Recommended for Keycloak** (includes `'self'` and `connect-src`):
-```
-script-src 'self' https://challenges.cloudflare.com
-frame-src 'self' https://challenges.cloudflare.com
-connect-src 'self' https://challenges.cloudflare.com
-```
-
-### Configuration Methods
-
-Choose the method that best fits your deployment:
-
-#### Method 1: Keycloak Environment Variables
-
-Add CSP configuration via environment variables before starting Keycloak:
-
-```bash
-# Set CSP environment variables
-export KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com"
-export KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com"
-export KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC="'self' https://challenges.cloudflare.com"
-
-# Start Keycloak
-/opt/keycloak/bin/kc.sh start
-```
-
-#### Method 2: Docker / Docker Compose
-
-Add environment variables to your `docker-compose.yml`:
-
-```yaml
-services:
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0.0
-    environment:
-      KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
-      KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
-      KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
-    volumes:
-      - ./zymlabs-cloudflare-turnstile-provider.jar:/opt/keycloak/providers/zymlabs-cloudflare-turnstile-provider.jar
-    command:
-      - start-dev
-```
-
-Or with `docker run`:
-
-```bash
-docker run -d \
-  -e KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com" \
-  -e KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com" \
-  -e KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC="'self' https://challenges.cloudflare.com" \
-  -v ./zymlabs-cloudflare-turnstile-provider.jar:/opt/keycloak/providers/zymlabs-cloudflare-turnstile-provider.jar \
-  quay.io/keycloak/keycloak:24.0.0
-```
-
-#### Method 3: Reverse Proxy Headers
-
-If Keycloak is behind a reverse proxy, configure CSP headers there:
-
-**nginx** (`/etc/nginx/nginx.conf` or site config):
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name auth.yourdomain.com;
-
-    location / {
-        proxy_pass http://keycloak:8080;
-
-        # Add CSP header
-        add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;" always;
-
-        # Other proxy headers...
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-**Apache** (`httpd.conf` or `.htaccess`):
-
-```apache
-<VirtualHost *:443>
-    ServerName auth.yourdomain.com
-
-    # Add CSP header
-    Header always set Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
-
-    ProxyPass / http://keycloak:8080/
-    ProxyPassReverse / http://keycloak:8080/
-</VirtualHost>
-```
-
-**Traefik** (labels in `docker-compose.yml`):
-
-```yaml
-services:
-  keycloak:
-    labels:
-      - "traefik.http.middlewares.csp.headers.contentsecuritypolicy=script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
-      - "traefik.http.routers.keycloak.middlewares=csp"
-```
-
-#### Method 4: Kubernetes
-
-**Via ConfigMap**:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: keycloak-env
-data:
-  KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
-  KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
-  KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: keycloak
-spec:
-  template:
-    spec:
-      containers:
-      - name: keycloak
-        image: quay.io/keycloak/keycloak:24.0.0
-        envFrom:
-        - configMapRef:
-            name: keycloak-env
-```
-
-**Via Ingress** (nginx-ingress):
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: keycloak
-  annotations:
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;" always;
-spec:
-  rules:
-  - host: auth.yourdomain.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: keycloak
-            port:
-              number: 8080
-```
-
-### Verify CSP Configuration
-
-After configuring CSP, verify it's working:
-
-**1. Check HTTP Headers**:
-
-```bash
-curl -I https://your-keycloak.com/realms/your-realm/protocol/openid-connect/auth | grep -i content-security
-```
-
-Should show:
-```
-content-security-policy: script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; ...
-```
-
-**2. Check Browser Console**:
-
-1. Open your Keycloak login page
-2. Press F12 to open DevTools
-3. Go to Console tab
-4. Look for CSP errors
-
-**Should NOT see**:
-```
-Refused to load script from 'https://challenges.cloudflare.com/...' because it violates CSP
-Refused to frame 'https://challenges.cloudflare.com/...' because it violates CSP
-```
-
-**3. Check Widget Loads**:
-
-1. Navigate to login page
-2. Turnstile widget should appear
-3. No console errors related to Cloudflare
-
-If you see CSP errors, review your configuration method and ensure CSP headers are being set correctly.
-
-### Troubleshooting CSP Issues
-
-If CSP is not working:
-
-1. **Environment variables not taking effect**:
-   - Restart Keycloak completely
-   - Verify env vars with: `printenv | grep KC_SPI_CONTENT_SECURITY_POLICY`
-
-2. **Docker CSP not working**:
-   - Check environment variables are passed: `docker exec keycloak printenv | grep KC_SPI`
-   - Rebuild container: `docker-compose up -d --force-recreate`
-
-3. **Reverse proxy CSP conflicts**:
-   - CSP headers can conflict if set in multiple places
-   - Check if Keycloak is setting CSP AND proxy is setting CSP
-   - Choose one location (preferably reverse proxy for better control)
-
-4. **Widget still not loading**:
-   - Verify HTTPS is enabled (Turnstile requires HTTPS)
-   - Check browser console for specific error messages
-   - See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#widget-issues) for more help
+Keycloak has no environment variable or startup option for this header, and a header added by a reverse proxy
+doesn't loosen the realm's. See [CONFIGURATION.md](CONFIGURATION.md#content-security-policy) for stricter
+policies, reverse proxies, kcadm, verifying the header and recovering the admin console.
 
 ## 5. Configure Theme (Optional - Custom Theme Mode Only)
 

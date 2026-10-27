@@ -25,200 +25,107 @@ Complete reference for all configuration options in the Cloudflare Turnstile Key
 
 ## Content Security Policy
 
-**REQUIRED**: Cloudflare Turnstile requires Content Security Policy (CSP) configuration to function properly.
+The Turnstile widget loads a script and a challenge frame from `https://challenges.cloudflare.com`. Keycloak
+sends a Content-Security-Policy (CSP) header for each realm, and the browser blocks anything that header doesn't
+allow.
 
-### Overview
+### What to change
 
-The Turnstile widget loads JavaScript and iframe content from Cloudflare's servers at `challenges.cloudflare.com`. Modern browsers will block these external resources unless explicitly allowed in your CSP configuration.
+Keycloak's default realm policy is:
 
-### Required CSP Directives
-
-**Minimum (from Cloudflare)**:
 ```
-script-src https://challenges.cloudflare.com
-frame-src https://challenges.cloudflare.com
+frame-src 'self'; frame-ancestors 'self'; object-src 'none';
 ```
 
-**Recommended for Keycloak**:
+It has no `script-src` (and no `default-src`), so Cloudflare's script is already allowed. Only `frame-src`
+blocks the widget. Add Cloudflare to it:
+
 ```
-script-src 'self' https://challenges.cloudflare.com
-frame-src 'self' https://challenges.cloudflare.com
-connect-src 'self' https://challenges.cloudflare.com
+frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none';
 ```
 
-The `'self'` directive allows Keycloak's own scripts to run, and `connect-src` enables AJAX requests that Turnstile may make.
+Do this in every realm that shows Turnstile, and keep any other directives your realm already has. That is the
+whole change; Turnstile needs nothing else from a default policy.
 
-### Configuration Locations
+### Don't add `script-src`
 
-CSP can be configured at different layers. Choose the method that best fits your infrastructure:
+> **Warning**: a `script-src` such as `script-src 'self' https://challenges.cloudflare.com` breaks Keycloak.
 
-#### 1. Keycloak Environment Variables
+Keycloak 26's admin console and account console start with an inline script, and so do this provider's Separate
+Page and Custom Theme templates. A `script-src` without `'unsafe-inline'` blocks them: the consoles stay blank
+with `Failed to resolve module specifier "react/jsx-runtime"` in the browser console, and the Turnstile pages lose
+their callbacks.
 
-Set CSP via Keycloak's SPI configuration:
+The admin console is served with the **master** realm's headers, so a `script-src` in `master` locks you out of
+the admin console. See [Recovering the admin console](#recovering-the-admin-console).
+
+If your security policy requires a `script-src`, it must also allow inline scripts and Cloudflare:
+
+```
+script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com;
+```
+
+Browsers ignore `'unsafe-inline'` when the same directive has a nonce, a hash or `'strict-dynamic'`, and Keycloak
+doesn't generate nonces for realm headers, so nonce-based policies need Keycloak customization beyond this
+provider. After any change to `script-src`, open the login page, the account console and the admin console.
+
+### `connect-src` and other directives
+
+- Turnstile doesn't need `connect-src`. If you set one, or a `default-src`, keep `'self'` in it: Keycloak's
+  pages call their own realm, and Cloudflare needs `'self'` for pre-clearance.
+- Test stricter directives such as `default-src` and `form-action` against the login, account and admin pages.
+  In Chromium, `form-action` also applies to the redirect back to your application after sign-in.
+
+### Where to set it
+
+The CSP is a realm setting; it takes effect immediately, without a restart. Keycloak has no environment variable
+or startup option for it.
+
+- **Admin console**: Realm settings → Security defenses → Headers → Content-Security-Policy
+- **Realm JSON** (import, export, Terraform and similar tools): `browserSecurityHeaders.contentSecurityPolicy`
+- **kcadm**:
+  ```bash
+  kcadm.sh update realms/myrealm \
+    -s "browserSecurityHeaders.contentSecurityPolicy=frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none';"
+  ```
+
+### Reverse proxies
+
+A CSP header added by a proxy doesn't replace Keycloak's. The browser enforces every policy it receives, and a
+resource must pass all of them, so adding Cloudflare to `frame-src` at the proxy doesn't help while the realm
+still sends `frame-src 'self'`. Set the policy in the realm. If the proxy must own the header, have it remove
+Keycloak's (nginx: `proxy_hide_header Content-Security-Policy;`) and send a complete replacement; that policy then
+applies to the admin and account consoles too, so the `script-src` warning above applies.
+
+### Verifying
 
 ```bash
-export KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC="'self' https://challenges.cloudflare.com"
-export KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC="'self' https://challenges.cloudflare.com"
-export KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC="'self' https://challenges.cloudflare.com"
+curl -sI https://keycloak.example.com/realms/myrealm/account/ | grep -i content-security-policy
 ```
 
-**Pros**: Direct configuration, no additional infrastructure needed
-**Cons**: Requires Keycloak restart to change
+Expected (with the default policy plus Cloudflare):
 
-#### 2. Reverse Proxy
-
-Configure CSP headers at your reverse proxy (nginx, Apache, Traefik):
-
-**nginx**:
-```nginx
-add_header Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;" always;
+```
+content-security-policy: frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none';
 ```
 
-**Apache**:
-```apache
-Header always set Content-Security-Policy "script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;"
-```
+In the browser, open the login page with DevTools (F12) → Console. You should not see
+`Refused to frame 'https://challenges.cloudflare.com/...'` or `Refused to load the script
+'https://challenges.cloudflare.com/...'`.
 
-**Pros**: Can update without Keycloak restart, centralized control
-**Cons**: Requires reverse proxy configuration access
+Messages logged from inside Cloudflare's frame (the source shows a challenge page such as `flexible?lang=auto`)
+come from Cloudflare's own policy on that page, for example `Connecting to 'data:,' violates ... connect-src` or
+`No available adapters`. They are expected, and your realm's policy can't change them.
 
-#### 3. Container Orchestration
+### Recovering the admin console
 
-**Docker Compose**:
-```yaml
-environment:
-  KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
-  KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
-  KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
-```
-
-**Kubernetes ConfigMap**:
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: keycloak-csp
-data:
-  KC_SPI_CONTENT_SECURITY_POLICY_SCRIPT_SRC: "'self' https://challenges.cloudflare.com"
-  KC_SPI_CONTENT_SECURITY_POLICY_FRAME_SRC: "'self' https://challenges.cloudflare.com"
-  KC_SPI_CONTENT_SECURITY_POLICY_CONNECT_SRC: "'self' https://challenges.cloudflare.com"
-```
-
-**Pros**: Infrastructure as code, version controlled
-**Cons**: Requires container restart to change
-
-### Verifying CSP Configuration
-
-After configuring, verify CSP is active:
-
-**1. Check HTTP Response Headers**:
+The admin REST API isn't affected by CSP, so if a policy in `master` blocks the admin console, fix it with kcadm:
 
 ```bash
-curl -I https://your-keycloak.com/realms/myrealm/protocol/openid-connect/auth | grep -i content-security-policy
+kcadm.sh config credentials --server https://keycloak.example.com --realm master --user admin
+kcadm.sh update realms/master \
+  -s "browserSecurityHeaders.contentSecurityPolicy=frame-src 'self'; frame-ancestors 'self'; object-src 'none';"
 ```
-
-Expected output:
-```
-content-security-policy: script-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com;
-```
-
-**2. Browser DevTools**:
-
-1. Open Keycloak login page
-2. Open DevTools (F12) → Console tab
-3. Look for CSP violations
-
-**Should NOT see**:
-```
-Refused to load the script 'https://challenges.cloudflare.com/...' because it violates the following Content Security Policy directive: "script-src 'self'"
-```
-
-**3. Network Tab**:
-
-1. Open DevTools (F12) → Network tab
-2. Reload login page
-3. Filter for `challenges.cloudflare.com`
-4. All requests should show status 200 (not blocked)
-
-### Common CSP Issues
-
-**Issue**: CSP headers not appearing
-
-**Causes**:
-- Environment variables not set correctly
-- Keycloak not restarted after config change
-- Reverse proxy overriding headers
-
-**Fix**:
-```bash
-# Verify environment variables
-printenv | grep KC_SPI_CONTENT_SECURITY_POLICY
-
-# Restart Keycloak
-systemctl restart keycloak
-# Or for Docker
-docker-compose restart keycloak
-```
-
-**Issue**: Widget blocked despite CSP configured
-
-**Causes**:
-- Multiple CSP headers conflicting
-- Strict CSP from reverse proxy
-- Browser extensions blocking
-
-**Fix**:
-- Check for multiple `Content-Security-Policy` headers
-- Ensure only one layer sets CSP (either Keycloak OR reverse proxy)
-- Test in incognito mode without extensions
-
-### Security Considerations
-
-**Nonce-based CSP (Advanced)**:
-
-For enhanced security, Cloudflare recommends using nonce-based CSP with `strict-dynamic`:
-
-```html
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" nonce="RANDOM_NONCE"></script>
-```
-
-With CSP:
-```
-script-src 'nonce-RANDOM_NONCE' 'strict-dynamic'
-```
-
-This approach eliminates the need to allowlist specific domains. However, it requires:
-- Generating a unique nonce per request
-- Injecting the nonce into FreeMarker templates
-- More complex Keycloak customization
-
-For most deployments, domain-based CSP (as shown above) provides sufficient security.
-
-### Full Example CSP
-
-For a production deployment with strict security:
-
-```
-Content-Security-Policy:
-  default-src 'self';
-  script-src 'self' https://challenges.cloudflare.com;
-  style-src 'self' 'unsafe-inline';
-  img-src 'self' data:;
-  font-src 'self' data:;
-  frame-src 'self' https://challenges.cloudflare.com;
-  connect-src 'self' https://challenges.cloudflare.com;
-  frame-ancestors 'self';
-  base-uri 'self';
-  form-action 'self';
-```
-
-**Notes**:
-- `'unsafe-inline'` in `style-src` may be required for Keycloak themes
-- `data:` in `img-src` and `font-src` allows embedded images/fonts
-- `frame-ancestors 'self'` prevents clickjacking
-- Adjust based on your specific Keycloak theme requirements
-
-For detailed setup instructions, see [SETUP.md](SETUP.md#4-configure-content-security-policy).
 
 ## Authenticator Configuration
 
