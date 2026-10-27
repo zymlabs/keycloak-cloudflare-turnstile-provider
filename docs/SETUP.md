@@ -61,10 +61,10 @@ If you don't have one:
 - For testing: `localhost` or your test domain
 - Can use wildcards: `*.yourdomain.com`
 
-**Widget Mode**: Select the default mode
-- **Managed** (recommended): Automatic for low-risk, interactive for suspicious
-- **Non-interactive**: Minimal user interaction
-- **Invisible**: No visible widget (advanced)
+**Widget Mode**: How Cloudflare checks visitors. This is fixed per site key; Keycloak can't change it
+- **Managed** (recommended): Automatic for low-risk visitors, a checkbox when Cloudflare is unsure
+- **Non-Interactive**: A loading spinner, never a click
+- **Invisible**: Nothing shown, never a click (Cloudflare asks you to mention its Turnstile Privacy Addendum in your privacy policy)
 
 **Pre-Clearance**: Optional, keep default settings
 
@@ -354,10 +354,13 @@ API; see [CONFIGURATION.md](CONFIGURATION.md#realm-wide-settings).
 
 ### Step 3: Widget Configuration
 
-**Widget Mode**:
-- `managed` (recommended) - Balanced security and UX
-- `non-interactive` - Minimal friction
-- `invisible` - No visible widget (advanced)
+**Widget Appearance** (`widgetMode`): when the widget is shown; it doesn't change the site key's mode
+- `always` (default) - Always visible
+- `interaction-only` - Hidden unless Cloudflare asks the visitor to click
+- `invisible` - Only for site keys in Cloudflare's Invisible mode
+
+`managed` and `non-interactive`, the former names of `always` and `interaction-only`, still work. See
+[CONFIGURATION.md](CONFIGURATION.md#widget-appearance).
 
 **Widget Theme**:
 - `auto` (recommended) - Matches user's OS dark mode
@@ -404,7 +407,7 @@ API; see [CONFIGURATION.md](CONFIGURATION.md#realm-wide-settings).
 ```
 Site Key: 0x4AAAAAAA... (your key)
 Secret Key: 0x4AAAAAAA... (your secret)
-Widget Mode: managed
+Widget Appearance: always
 Widget Theme: auto
 Record Verifications: true
 IP Allowlist: (empty or your office network)
@@ -441,7 +444,7 @@ Or use an incognito window and temporary realm for testing.
 2. You should see the Turnstile widget **before** username/password fields
 3. Widget should match your theme configuration
 
-**Expected appearance** (managed mode, separate page):
+**Expected appearance** (`always`, separate page):
 
 ![The separate Turnstile page before the sign-in form](images/sign-in/separate-page.png)
 
@@ -569,7 +572,7 @@ If issues occur:
 **Fix**:
 - Ensure FreeMarker template is correct
 - Check form submission includes `cf-turnstile-response`
-- Verify widget mode is compatible
+- Verify Widget Appearance suits the site key's mode (`invisible` only with an Invisible site key)
 
 ### All Verifications Failing
 

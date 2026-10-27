@@ -103,7 +103,8 @@ public class CloudflareTurnstileFormAction implements FormAction {
 
         // Get configuration
         String siteKey = configMap.get(CloudflareTurnstileAuthenticator.CONFIG_SITE_KEY);
-        String widgetMode = configMap.getOrDefault(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_MODE, "managed");
+        WidgetAppearance widgetAppearance = WidgetAppearance.fromConfig(configMap.get(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_MODE));
+        String widgetMode = widgetAppearance.value();
         String widgetTheme = configMap.getOrDefault(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_THEME, "auto");
         String implementationMethod = configMap.getOrDefault(CONFIG_IMPLEMENTATION_METHOD, METHOD_SCRIPT_INJECTION);
         boolean enableDebugLogging = Boolean.parseBoolean(
@@ -116,7 +117,7 @@ public class CloudflareTurnstileFormAction implements FormAction {
         // Set common attributes
         form.setAttribute("turnstileRequired", true);
         form.setAttribute("turnstileSiteKey", siteKey);
-        form.setAttribute("turnstileMode", widgetMode);
+        widgetAppearance.setAttributes(form);
         form.setAttribute("turnstileTheme", widgetTheme);
         form.setAttribute("turnstileSkipped", false);
         form.setAttribute("enableDebugLogging", enableDebugLogging);

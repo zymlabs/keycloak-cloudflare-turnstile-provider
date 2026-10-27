@@ -89,7 +89,7 @@ Example authenticator configuration with recommended settings.
 |---------|---------------|-------------|
 | siteKey | 0x4AAA...example | Your Cloudflare Turnstile site key (public) |
 | secretKey | 0x4AAA...secret | Your Cloudflare Turnstile secret key (private) |
-| widgetMode | managed | Widget mode: managed, non-interactive, invisible |
+| widgetMode | always | Widget appearance: always, interaction-only, invisible (former names managed and non-interactive still work) |
 | widgetTheme | auto | Theme: light, dark, auto |
 | recordVerifications | true | Store results in database for auditing |
 | ipAllowlist | (empty) | IPs/CIDRs to skip verification |
@@ -117,7 +117,7 @@ Example authenticator configuration with recommended settings.
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "",
@@ -145,7 +145,7 @@ Example authenticator configuration with recommended settings.
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "non-interactive",
+  "widgetMode": "interaction-only",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "192.168.0.0/16,10.0.0.0/8",
@@ -173,7 +173,7 @@ Example authenticator configuration with recommended settings.
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "",
@@ -205,7 +205,7 @@ Example authenticator configuration with recommended settings.
 {
   "siteKey": "YOUR_SITE_KEY",
   "secretKey": "YOUR_SECRET_KEY",
-  "widgetMode": "managed",
+  "widgetMode": "always",
   "widgetTheme": "auto",
   "recordVerifications": "true",
   "ipAllowlist": "",
@@ -254,7 +254,7 @@ Change to `failAction: BLOCK` and `failMode: FAIL_CLOSED`
 
 **Behavior**:
 - ✅ Office users skip completely
-- ✅ External users see invisible verification
+- ✅ External users see no widget (needs a site key in Cloudflare's Invisible mode)
 - ✅ High availability (FAIL_OPEN)
 - ⚠️ Slightly less secure
 
@@ -306,9 +306,9 @@ Block specific IPs or ranges known for abuse.
    failMode: FAIL_OPEN → FAIL_CLOSED
    ```
 
-2. **Enable stricter widget mode** (optional):
+2. **Show the widget all the time** (optional):
    ```
-   widgetMode: non-interactive → managed
+   widgetMode: interaction-only → always
    ```
 
 3. **Keep recording enabled**:

@@ -17,18 +17,13 @@
                     <div id="turnstile-widget" class="cf-turnstile" style="width: 100%; max-width: 400px;"
                          data-sitekey="${turnstileSiteKey}"
                          data-theme="${turnstileTheme}"
-                         <#if turnstileMode == 'invisible'>
-                         data-size="invisible"
-                         data-callback="onTurnstileSuccess"
-                         <#else>
                          data-size="flexible"
+                         data-appearance="${turnstileAppearance!'always'}"
                          data-callback="onTurnstileSuccess"
+                         <#if !(turnstileInvisible!false)>
                          data-error-callback="onTurnstileError"
                          data-expired-callback="onTurnstileExpired"
                          data-timeout-callback="onTurnstileTimeout"
-                         </#if>
-                         <#if turnstileMode == 'non-interactive'>
-                         data-appearance="interaction-only"
                          </#if>>
                     </div>
                 </div>
@@ -41,7 +36,7 @@
                                 class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
                                 name="login"
                                 id="kc-login"
-                                <#if turnstileMode != 'invisible'>disabled</#if>>
+                                <#if !(turnstileInvisible!false)>disabled</#if>>
                             <#if resetFlow>${msg("doContinue")}<#else>${msg("doLogIn")}</#if>
                         </button>
                     </div>
@@ -73,7 +68,7 @@
                         }
                     }
 
-                    <#if turnstileMode == 'invisible'>
+                    <#if turnstileInvisible!false>
                     // Invisible mode: callback function for auto-submit
                     function onTurnstileSuccess(token) {
                         <#if enableDebugLogging!false>
@@ -96,7 +91,7 @@
                         });
                     });
                     <#else>
-                    // Managed and Non-interactive modes: callbacks to enable/disable submit button
+                    // Visible widgets (always, interaction-only): callbacks to enable/disable submit button
                     function onTurnstileSuccess(token) {
                         <#if enableDebugLogging!false>
                         console.log('[Turnstile] Verification successful');

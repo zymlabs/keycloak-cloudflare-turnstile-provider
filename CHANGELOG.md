@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   compose file now includes Mailpit for Keycloak's emails and turns on `declarative-ui`.
 
 ### Changed
+- **"Widget Mode" is now "Widget Appearance", with values named for what they do**: `always`
+  (formerly `managed`), `interaction-only` (formerly `non-interactive`) and `invisible`. The setting
+  only ever set Cloudflare's `appearance`; Cloudflare's own mode (Managed, Non-Interactive, Invisible)
+  belongs to the site key and is chosen in the Cloudflare dashboard. The config key is still
+  `widgetMode`, the former names still work and mean the same, and nothing needs migrating. Themes get
+  `turnstileAppearance` and `turnstileInvisible`; `turnstileMode` still carries the former names.
 - **With the widget inline, the sign-in page is Keycloak's own username/password form**, built and
   checked by Keycloak's step with the widget added. `login_hint` and remembered usernames are filled
   in, a user identified by an earlier step is asked only for the password, and on Keycloak 26 (with
@@ -58,6 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   username/password form.
 
 ### Fixed
+- **`invisible` with a site key in Managed or Non-Interactive mode** broke the widget: it asked for
+  `size: invisible`, which Cloudflare rejects (`Invalid value for parameter "size"`) when it shows such a
+  widget. The widget is now rendered as `interaction-only` at the usual size; an Invisible site key
+  still shows nothing.
 - **`SCRIPT_INJECTION` with themes that render the form with JavaScript** (React, Keycloakify): such
   themes add the page's scripts themselves, so they run in whatever order they load, and render the
   form when they are ready. The injector gave up when it ran before its settings (`config.js`) or

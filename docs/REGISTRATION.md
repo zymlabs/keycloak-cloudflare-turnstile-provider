@@ -325,14 +325,18 @@ Start: Choose Registration Protection Option
 
 | Setting | Options | Description |
 |---------|---------|-------------|
-| **Widget Mode** | `managed`, `non-interactive`, `invisible` | How the widget appears to users |
+| **Widget Appearance** (`widgetMode`) | `always`, `interaction-only`, `invisible` | When the widget is shown |
 | **Widget Theme** | `auto`, `light`, `dark` | Visual theme |
 
-**Widget Mode Explained:**
+**Widget Appearance Explained:**
 
-- **managed** (Recommended): Shows interactive challenge when needed, automatic for legitimate users
-- **non-interactive**: Always visible but requires minimal interaction
-- **invisible**: Runs completely in the background (auto-submits form)
+- **always** (default): Always visible, with a checkbox when Cloudflare asks for one
+- **interaction-only**: Hidden unless Cloudflare asks the visitor to click
+- **invisible**: For site keys in Cloudflare's Invisible mode: nothing shown, and the separate page submits by itself
+
+How Cloudflare checks visitors is the mode of the site key (Managed, Non-Interactive or Invisible), chosen in
+the Cloudflare dashboard. `managed` and `non-interactive`, the former names of `always` and
+`interaction-only`, still work. See [CONFIGURATION.md](CONFIGURATION.md#widget-appearance).
 
 ### Security Settings
 
@@ -362,7 +366,7 @@ Start: Choose Registration Protection Option
 ```
 Site Key: YOUR_SITE_KEY
 Secret Key: YOUR_SECRET_KEY
-Widget Mode: managed
+Widget Appearance: always
 Widget Theme: auto
 Record Verifications: true
 IP Allowlist: (empty - verify everyone)
@@ -387,7 +391,7 @@ Fail Mode: FAIL_CLOSED
 ```
 Site Key: YOUR_SITE_KEY
 Secret Key: YOUR_SECRET_KEY
-Widget Mode: non-interactive
+Widget Appearance: interaction-only
 Widget Theme: auto
 Record Verifications: true
 IP Allowlist: 192.168.0.0/16,10.0.0.0/8
@@ -412,7 +416,7 @@ Fail Mode: FAIL_CLOSED
 ```
 Site Key: YOUR_SITE_KEY
 Secret Key: YOUR_SECRET_KEY
-Widget Mode: managed
+Widget Appearance: always
 Widget Theme: auto
 Record Verifications: true
 IP Allowlist: (empty)
@@ -437,7 +441,7 @@ Fail Mode: FAIL_OPEN
 ```
 Site Key: YOUR_SITE_KEY
 Secret Key: YOUR_SECRET_KEY
-Widget Mode: managed
+Widget Appearance: always
 Widget Theme: auto
 Record Verifications: true
 IP Allowlist: (empty)
@@ -827,8 +831,10 @@ When using `FAIL_OPEN`:
 For fastest user experience:
 
 ```
-Widget Mode: invisible
+Widget Appearance: invisible
 ```
+
+With a site key created in Cloudflare's Invisible mode.
 
 **Benefits:**
 - Zero user interaction required
@@ -1022,7 +1028,7 @@ This allows:
 
 When switching options:
 
-- [ ] Note current configuration (site key, secret key, widget mode, etc.)
+- [ ] Note current configuration (site key, secret key, widget appearance, etc.)
 - [ ] Test new option in test/staging environment first
 - [ ] Verify widget appears correctly
 - [ ] Test successful registration

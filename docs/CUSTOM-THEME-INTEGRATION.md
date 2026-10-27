@@ -100,14 +100,8 @@ cat theme/cloudflare-turnstile/login/register.ftl
             <div class="cf-turnstile"
                  data-sitekey="${turnstileSiteKey}"
                  data-theme="${turnstileTheme!'auto'}"
-                 <#if turnstileMode == 'invisible'>
-                 data-size="invisible"
-                 <#else>
                  data-size="flexible"
-                 </#if>
-                 <#if turnstileMode == 'non-interactive'>
-                 data-appearance="interaction-only"
-                 </#if>
+                 data-appearance="${turnstileAppearance!'always'}"
                  style="width: 100%"
             ></div>
         </div>
@@ -140,14 +134,8 @@ cat theme/cloudflare-turnstile/login/register.ftl
                 <div class="cf-turnstile"
                      data-sitekey="${turnstileSiteKey}"
                      data-theme="${turnstileTheme!'auto'}"
-                     <#if turnstileMode == 'invisible'>
-                     data-size="invisible"
-                     <#else>
                      data-size="flexible"
-                     </#if>
-                     <#if turnstileMode == 'non-interactive'>
-                     data-appearance="interaction-only"
-                     </#if>
+                     data-appearance="${turnstileAppearance!'always'}"
                      style="width: 100%"
                 ></div>
             </div>
@@ -179,10 +167,8 @@ cat theme/cloudflare-turnstile/login/register.ftl
             <div class="cf-turnstile"
                  data-sitekey="${turnstileSiteKey}"
                  data-theme="${turnstileTheme!'auto'}"
-                 data-size="${(turnstileMode == 'invisible')?then('invisible', 'flexible')}"
-                 <#if turnstileMode == 'non-interactive'>
-                 data-appearance="interaction-only"
-                 </#if>
+                 data-size="flexible"
+                 data-appearance="${turnstileAppearance!'always'}"
                  style="width: 100%"
             ></div>
         </div>
@@ -228,10 +214,8 @@ cat theme/cloudflare-turnstile/login/register.ftl
                 <div class="cf-turnstile"
                      data-sitekey="${turnstileSiteKey}"
                      data-theme="${turnstileTheme!'auto'}"
-                     data-size="${(turnstileMode == 'invisible')?then('invisible', 'flexible')}"
-                     <#if turnstileMode == 'non-interactive'>
-                     data-appearance="interaction-only"
-                     </#if>
+                     data-size="flexible"
+                     data-appearance="${turnstileAppearance!'always'}"
                      style="width: 100%"
                 ></div>
             </div>
@@ -281,14 +265,8 @@ cat theme/cloudflare-turnstile/login/register.ftl
             <div class="cf-turnstile"
                  data-sitekey="${turnstileSiteKey}"
                  data-theme="${turnstileTheme!'auto'}"
-                 <#if turnstileMode == 'invisible'>
-                 data-size="invisible"
-                 <#elseif turnstileMode == 'non-interactive'>
                  data-size="flexible"
-                 data-appearance="interaction-only"
-                 <#else>
-                 data-size="flexible"
-                 </#if>
+                 data-appearance="${turnstileAppearance!'always'}"
                  style="width: 100%"
             ></div>
         </div>
@@ -336,14 +314,8 @@ cat theme/cloudflare-turnstile/login/register.ftl
                 <div class="cf-turnstile"
                      data-sitekey="${turnstileSiteKey}"
                      data-theme="${turnstileTheme!'auto'}"
-                     <#if turnstileMode == 'invisible'>
-                     data-size="invisible"
-                     <#elseif turnstileMode == 'non-interactive'>
                      data-size="flexible"
-                     data-appearance="interaction-only"
-                     <#else>
-                     data-size="flexible"
-                     </#if>
+                     data-appearance="${turnstileAppearance!'always'}"
                      style="width: 100%"
                 ></div>
             </div>
@@ -378,7 +350,9 @@ The Cloudflare Turnstile authenticator provides these variables to your template
 | `turnstileSkipped` | Boolean | Whether verification was skipped (allowlisted IP) | `true`, `false` |
 | `turnstileSiteKey` | String | Your Cloudflare site key | `"1x00000000000000000000AA"` |
 | `turnstileTheme` | String | Widget theme | `"light"`, `"dark"`, `"auto"` |
-| `turnstileMode` | String | Widget interaction mode | `"managed"`, `"non-interactive"`, `"invisible"` |
+| `turnstileAppearance` | String | Cloudflare's `appearance` for the widget, from the Widget Appearance setting (`interaction-only` for `invisible`) | `"always"`, `"interaction-only"` |
+| `turnstileInvisible` | Boolean | Widget Appearance is `invisible`: the site key is in Cloudflare's Invisible mode, so don't hold back the submit button | `true`, `false` |
+| `turnstileMode` | String | The Widget Appearance setting under its former names, for themes written against them | `"managed"` (always), `"non-interactive"` (interaction-only), `"invisible"` |
 
 ### Script Injection Variable
 
@@ -396,8 +370,14 @@ The Turnstile widget supports these Cloudflare data attributes:
 |-----------|-------------|-----------------|
 | `data-sitekey` | Your site key (required) | From config |
 | `data-theme` | Visual theme | `light`, `dark`, `auto` |
-| `data-size` | Widget size | `flexible`, `invisible` |
-| `data-appearance` | Interaction mode | `interaction-only`, `always` |
+| `data-size` | Widget size | `normal`, `flexible`, `compact` |
+| `data-appearance` | When the widget is visible | `always`, `execute`, `interaction-only` |
+
+Cloudflare's widget mode (Managed, Non-Interactive, Invisible) comes from the site key, not from an
+attribute. Don't use `data-size="invisible"`: Cloudflare throws `Invalid value for parameter "size"` when it
+shows a widget whose site key is in Managed or Non-Interactive mode. Themes written against
+`turnstileMode` keep working as before, including that problem; to fix it, replace
+`data-size="invisible"` with `data-size="flexible"` and set `data-appearance="${turnstileAppearance}"`.
 
 ---
 
@@ -801,14 +781,8 @@ parent=keycloak.v2
                         <div class="cf-turnstile"
                              data-sitekey="${turnstileSiteKey}"
                              data-theme="${turnstileTheme!'auto'}"
-                             <#if turnstileMode == 'invisible'>
-                             data-size="invisible"
-                             <#else>
                              data-size="flexible"
-                             </#if>
-                             <#if turnstileMode == 'non-interactive'>
-                             data-appearance="interaction-only"
-                             </#if>
+                             data-appearance="${turnstileAppearance!'always'}"
                              style="width: 100%"
                         ></div>
                     </div>

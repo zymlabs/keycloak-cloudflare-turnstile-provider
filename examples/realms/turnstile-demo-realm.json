@@ -699,7 +699,7 @@
       "config": {
         "siteKey": "1x00000000000000000000AA",
         "secretKey": "1x0000000000000000000000000000000AA",
-        "widgetMode": "managed",
+        "widgetMode": "always",
         "widgetTheme": "auto",
         "recordVerifications": "true",
         "ipAllowlist": "",
@@ -717,7 +717,7 @@
       "config": {
         "siteKey": "1x00000000000000000000AA",
         "secretKey": "1x0000000000000000000000000000000AA",
-        "widgetMode": "managed",
+        "widgetMode": "always",
         "widgetTheme": "auto",
         "recordVerifications": "true",
         "ipAllowlist": "",
@@ -734,7 +734,7 @@
       "config": {
         "siteKey": "1x00000000000000000000AA",
         "secretKey": "1x0000000000000000000000000000000AA",
-        "widgetMode": "managed",
+        "widgetMode": "always",
         "widgetTheme": "auto",
         "recordVerifications": "true",
         "ipAllowlist": "",
@@ -752,7 +752,7 @@
       "config": {
         "siteKey": "1x00000000000000000000AA",
         "secretKey": "1x0000000000000000000000000000000AA",
-        "widgetMode": "managed",
+        "widgetMode": "always",
         "widgetTheme": "auto",
         "implementationMethod": "SCRIPT_INJECTION",
         "recordVerifications": "true",
@@ -770,7 +770,7 @@
       "config": {
         "siteKey": "1x00000000000000000000AA",
         "secretKey": "1x0000000000000000000000000000000AA",
-        "widgetMode": "managed",
+        "widgetMode": "always",
         "widgetTheme": "auto",
         "implementationMethod": "CUSTOM_THEME",
         "recordVerifications": "true",

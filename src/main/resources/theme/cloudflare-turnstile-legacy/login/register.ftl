@@ -76,10 +76,8 @@
                         <div class="cf-turnstile"
                              data-sitekey="${turnstileSiteKey}"
                              data-theme="${turnstileTheme!'auto'}"
-                             data-size="${(turnstileMode == 'invisible')?then('invisible', 'flexible')}"
-                             <#if turnstileMode == 'non-interactive'>
-                             data-appearance="interaction-only"
-                             </#if>
+                             data-size="flexible"
+                             data-appearance="${turnstileAppearance!'always'}"
                              style="width: 100%"
                         ></div>
 

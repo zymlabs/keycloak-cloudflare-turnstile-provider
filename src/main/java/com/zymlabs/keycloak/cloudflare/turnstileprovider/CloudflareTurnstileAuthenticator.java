@@ -158,7 +158,7 @@ public class CloudflareTurnstileAuthenticator extends AbstractUsernameFormAuthen
 
         // Display Turnstile challenge
         String siteKey = configMap.get(CONFIG_SITE_KEY);
-        String widgetMode = configMap.getOrDefault(CONFIG_WIDGET_MODE, "managed");
+        WidgetAppearance widgetAppearance = WidgetAppearance.fromConfig(configMap.get(CONFIG_WIDGET_MODE));
         String widgetTheme = configMap.getOrDefault(CONFIG_WIDGET_THEME, "auto");
         boolean enableDebugLogging = Boolean.parseBoolean(configMap.getOrDefault(CONFIG_ENABLE_DEBUG_LOGGING, "false"));
         String implementationMethod = implementationMethod(context, configMap);
@@ -174,7 +174,7 @@ public class CloudflareTurnstileAuthenticator extends AbstractUsernameFormAuthen
                 break;
             case METHOD_SEPARATE_PAGE:
             default:
-                displaySeparatePage(context, siteKey, widgetMode, widgetTheme, enableDebugLogging, isRegistrationFlow);
+                displaySeparatePage(context, siteKey, widgetAppearance, widgetTheme, enableDebugLogging, isRegistrationFlow);
                 break;
         }
     }
@@ -184,7 +184,7 @@ public class CloudflareTurnstileAuthenticator extends AbstractUsernameFormAuthen
         String realmName = context.getRealm().getName();
         String providerId = CloudflareTurnstileResourceProviderFactory.PROVIDER_ID;
         form.addScript(CloudflareTurnstileHelper.buildConfigJsUrl(context.getUriInfo(), realmName, providerId,
-                configMap.get(CONFIG_SITE_KEY), configMap.getOrDefault(CONFIG_WIDGET_MODE, "managed"),
+                configMap.get(CONFIG_SITE_KEY), WidgetAppearance.fromConfig(configMap.get(CONFIG_WIDGET_MODE)).value(),
                 configMap.getOrDefault(CONFIG_WIDGET_THEME, "auto"),
                 Boolean.parseBoolean(configMap.getOrDefault(CONFIG_ENABLE_DEBUG_LOGGING, "false"))));
         form.addScript(CloudflareTurnstileHelper.buildInjectorJsUrl(context.getUriInfo(), realmName, providerId));
@@ -194,13 +194,14 @@ public class CloudflareTurnstileAuthenticator extends AbstractUsernameFormAuthen
      * Display Turnstile on a separate page (default method).
      * Shows only the Turnstile widget, then proceeds to the sign-in, registration or reset-password form.
      */
-    private void displaySeparatePage(AuthenticationFlowContext context, String siteKey, String widgetMode,
+    private void displaySeparatePage(AuthenticationFlowContext context, String siteKey, WidgetAppearance widgetAppearance,
                                      String widgetTheme, boolean enableDebugLogging, boolean isRegistrationFlow) {
         String template = isRegistrationFlow ? "turnstile-registration-form.ftl" : "turnstile-form.ftl";
 
-        Response challenge = context.form()
+        LoginFormsProvider form = context.form();
+        widgetAppearance.setAttributes(form);
+        Response challenge = form
                 .setAttribute("turnstileSiteKey", siteKey)
-                .setAttribute("turnstileMode", widgetMode)
                 .setAttribute("turnstileTheme", widgetTheme)
                 .setAttribute("isRegistrationFlow", isRegistrationFlow)
                 .setAttribute("isResetFlow", isResetCredentialsFlow(context))
@@ -239,9 +240,9 @@ public class CloudflareTurnstileAuthenticator extends AbstractUsernameFormAuthen
             form.setAttribute("turnstileRequired", true)
                     .setAttribute("turnstileSkipped", false)
                     .setAttribute("turnstileSiteKey", configMap.get(CONFIG_SITE_KEY))
-                    .setAttribute("turnstileMode", configMap.getOrDefault(CONFIG_WIDGET_MODE, "managed"))
                     .setAttribute("turnstileTheme", configMap.getOrDefault(CONFIG_WIDGET_THEME, "auto"))
                     .setAttribute("enableDebugLogging", Boolean.parseBoolean(configMap.getOrDefault(CONFIG_ENABLE_DEBUG_LOGGING, "false")));
+            WidgetAppearance.fromConfig(configMap.get(CONFIG_WIDGET_MODE)).setAttributes(form);
             if (scriptInjection) {
                 form.setAttribute("turnstileUseScriptInjection", true);
                 addInjectionScripts(form, context, configMap);

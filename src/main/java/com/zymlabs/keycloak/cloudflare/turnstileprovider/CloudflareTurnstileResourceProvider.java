@@ -72,10 +72,10 @@ public class CloudflareTurnstileResourceProvider implements RealmResourceProvide
     /**
      * Serves dynamically generated Turnstile configuration script.
      *
-     * GET /realms/{realm}/cloudflare-turnstile/config.js?siteKey=xxx&mode=managed&theme=auto&debug=false
+     * GET /realms/{realm}/cloudflare-turnstile/config.js?siteKey=xxx&mode=always&theme=auto&debug=false
      *
      * @param siteKey Cloudflare Turnstile site key
-     * @param mode Widget mode (managed, non-interactive, invisible)
+     * @param mode Widget appearance (always, interaction-only, invisible; or the former managed, non-interactive)
      * @param theme Widget theme (light, dark, auto)
      * @param debug Enable JavaScript console debug logging
      * @return Response with JavaScript that sets global config variables
@@ -110,7 +110,7 @@ public class CloudflareTurnstileResourceProvider implements RealmResourceProvide
     /** The config.js script: sets the widget settings as global variables. */
     static String configScript(String siteKey, String mode, String theme, String debug) {
         // Use defaults if not specified
-        String widgetMode = (mode != null && !mode.trim().isEmpty()) ? mode : "managed";
+        String widgetMode = WidgetAppearance.fromConfig(mode).value();
         String widgetTheme = (theme != null && !theme.trim().isEmpty()) ? theme : "auto";
         boolean enableDebugLogging = "true".equalsIgnoreCase(debug);
 

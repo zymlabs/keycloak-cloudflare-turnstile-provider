@@ -173,6 +173,29 @@ test.describe('script-injection injector', () => {
     await expect(page.locator('#kc-login')).toBeEnabled();
   });
 
+  // Cloudflare's own mode comes from the site key: the setting only picks the appearance, and never
+  // asks for an 'invisible' size, which Cloudflare rejects for site keys in other modes
+  for (const [mode, appearance, holdsSubmit] of [
+    ['always', 'always', true],
+    ['interaction-only', 'interaction-only', true],
+    ['invisible', 'interaction-only', false],
+    ['managed', 'always', true],
+    ['non-interactive', 'interaction-only', true],
+  ] as const) {
+    test(`widget setting "${mode}" renders with appearance ${appearance}`, async ({ page }) => {
+      await serve(page, FORM, { head: SERVER_RENDERED_HEAD, mode });
+      await expect.poll(() => stub(page)).toEqual({ rendered: ['w1'], removed: [] });
+
+      const options = await page.evaluate(() => {
+        const { size, appearance } = (window as any).turnstileStub.rendered[0].options;
+        return { size, appearance };
+      });
+      expect(options).toEqual({ size: 'flexible', appearance });
+      if (holdsSubmit) await expect(page.locator('#kc-login')).toBeDisabled();
+      else await expect(page.locator('#kc-login')).toBeEnabled();
+    });
+  }
+
   test('stays out of a form whose theme renders its own widget', async ({ page }) => {
     const served = await serve(page, FORM.replace('<div class="pf-v5-c-form__group" id="buttons">',
       '<div class="cf-turnstile" data-sitekey="theme"></div><div class="pf-v5-c-form__group" id="buttons">'), { head: SERVER_RENDERED_HEAD });

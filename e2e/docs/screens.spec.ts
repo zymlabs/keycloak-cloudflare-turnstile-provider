@@ -57,7 +57,7 @@ const stepConfig = (alias: string, changes: Record<string, string> = {}) => ({
     siteKey: SITE_KEY.pass,
     secretKey: SECRET_KEY.pass,
     implementationMethod: 'SCRIPT_INJECTION',
-    widgetMode: 'managed',
+    widgetMode: 'always',
     widgetTheme: 'auto',
     recordVerifications: 'true',
     // An office network; not the stack's own addresses, which would be let through
@@ -248,7 +248,7 @@ async function buildNorthwind() {
         providerId: 'cloudflare-turnstile-settings',
         subComponents: {},
         config: {
-          siteKey: [SITE_KEY.pass], secretKey: [SECRET_KEY.pass], widgetMode: ['managed'], widgetTheme: ['auto'],
+          siteKey: [SITE_KEY.pass], secretKey: [SECRET_KEY.pass], widgetMode: ['always'], widgetTheme: ['auto'],
           // An office network; not the stack's own addresses, which would be let through
           recordVerifications: ['true'], ipAllowlist: ['198.51.100.0/24'], allowlistBehavior: ['VERIFY_BUT_ALLOW'],
           ipBlocklist: [''], failAction: ['BLOCK'], failMode: ['FAIL_CLOSED'],

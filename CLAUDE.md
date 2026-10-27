@@ -104,7 +104,7 @@ All configuration is stored in Keycloak's database and accessed via `Authenticat
 - `siteKey` - Cloudflare site key (client-side)
 - `secretKey` - Cloudflare secret key (server-side; stored as entered unless it is a vault reference)
 - `implementationMethod` - SEPARATE_PAGE | SCRIPT_INJECTION | CUSTOM_THEME (UI label: "Implementation Method")
-- `widgetMode` - managed | non-interactive | invisible
+- `widgetMode` - Widget Appearance: always | interaction-only | invisible (`WidgetAppearance`; the former names managed and non-interactive are still read). Cloudflare's own mode belongs to the site key
 - `widgetTheme` - light | dark | auto
 - `recordVerifications` - boolean, store in database
 - `ipAllowlist` - comma-separated IPs/CIDRs to handle specially (see `allowlistBehavior`)
@@ -300,7 +300,8 @@ Edit `src/main/resources/theme-resources/templates/turnstile-form.ftl`
 
 Template variables available:
 - `${turnstileSiteKey}` - Site key from config
-- `${turnstileMode}` - Widget mode
+- `${turnstileAppearance}` - Cloudflare `appearance` (always | interaction-only); `${turnstileInvisible}` - invisible site key
+- `${turnstileMode}` - the same setting under its former names (managed | non-interactive | invisible), kept for existing themes
 - `${turnstileTheme}` - Theme
 - `${url.loginAction}` - Form submission URL
 - `${message}` - Error/info messages

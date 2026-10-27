@@ -100,11 +100,11 @@ public class CloudflareTurnstileAuthenticatorFactory implements AuthenticatorFac
 
                 .property()
                 .name(CloudflareTurnstileAuthenticator.CONFIG_WIDGET_MODE)
-                .label("Widget Mode")
-                .helpText("Turnstile widget mode: managed (default), non-interactive, or invisible")
+                .label("Widget Appearance")
+                .helpText("When the widget is shown. always (default): always visible. interaction-only: hidden unless Cloudflare asks the visitor to click. invisible: for site keys created in Cloudflare's Invisible mode; nothing is shown and the submit button isn't held back. Cloudflare's own mode (Managed, Non-Interactive, Invisible) is set on the site key in the Cloudflare dashboard. The former values managed and non-interactive still work, as always and interaction-only.")
                 .type(ProviderConfigProperty.LIST_TYPE)
-                .options("managed", "non-interactive", "invisible")
-                .defaultValue("managed")
+                .options("always", "interaction-only", "invisible")
+                .defaultValue("always")
                 .add()
 
                 .property()

@@ -20,13 +20,22 @@ class CloudflareTurnstileResourceProviderTest {
     }
 
     @Test
-    @DisplayName("config.js falls back to the managed widget and automatic theme")
+    @DisplayName("config.js falls back to an always-visible widget and automatic theme")
     void configScriptDefaults() {
         String script = CloudflareTurnstileResourceProvider.configScript("key", " ", null, "true");
 
         assertThat(script)
-                .contains("window.TURNSTILE_CONFIG.mode = \"managed\";")
+                .contains("window.TURNSTILE_CONFIG.mode = \"always\";")
                 .contains("window.TURNSTILE_CONFIG.theme = \"auto\";")
                 .contains("window.TURNSTILE_DEBUG_LOGGING = true;");
+    }
+
+    @Test
+    @DisplayName("config.js gives the injector the current name of a former widget mode")
+    void configScriptRenamesFormerModes() {
+        assertThat(CloudflareTurnstileResourceProvider.configScript("key", "non-interactive", "auto", "false"))
+                .contains("window.TURNSTILE_CONFIG.mode = \"interaction-only\";");
+        assertThat(CloudflareTurnstileResourceProvider.configScript("key", "managed", "auto", "false"))
+                .contains("window.TURNSTILE_CONFIG.mode = \"always\";");
     }
 }

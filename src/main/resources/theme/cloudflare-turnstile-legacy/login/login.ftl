@@ -88,17 +88,9 @@
                                   <div class="cf-turnstile"
                                        data-sitekey="${turnstileSiteKey}"
                                        data-theme="${turnstileTheme!'auto'}"
-                                       <#if turnstileMode == 'invisible'>
-                                       data-size="invisible"
-                                       <#elseif turnstileMode == 'non-interactive'>
                                        data-size="flexible"
-                                       data-appearance="interaction-only"
-                                       data-callback="onTurnstileSuccess"
-                                       data-error-callback="onTurnstileError"
-                                       data-expired-callback="onTurnstileExpired"
-                                       data-timeout-callback="onTurnstileTimeout"
-                                       <#else>
-                                       data-size="flexible"
+                                       data-appearance="${turnstileAppearance!'always'}"
+                                       <#if !(turnstileInvisible!false)>
                                        data-callback="onTurnstileSuccess"
                                        data-error-callback="onTurnstileError"
                                        data-expired-callback="onTurnstileExpired"
@@ -109,7 +101,7 @@
                               </div>
                           </div>
                           <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-                          <#if turnstileMode != 'invisible'>
+                          <#if !(turnstileInvisible!false)>
                           <script>
                               // Helper to find submit button with fallbacks
                               function findSubmitButton() {
